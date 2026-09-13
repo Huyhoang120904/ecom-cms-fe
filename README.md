@@ -59,12 +59,16 @@ backend is unavailable the command exits non-zero with the actual error.
 
 ## Current surface
 
-The backend publishes health endpoints only. The CMS therefore ships three
-routes with no invented data:
+The backend publishes health, identity, and media endpoints. The CMS ships these
+routes:
 
 | Route | Content |
 |---|---|
+| `/login` | Sign in. Public |
+| `/register` | Create an account and its first shop. Public |
 | `/` | Backend liveness/readiness status and an honest empty operational summary |
+| `/profile` | Own profile, avatar, and account deactivation |
+| `/shop` | Active shop settings, background, and typed-name retirement |
 | `/products` | URL-backed filters, loading skeleton, error state, empty state |
 | `/orders` | URL-backed filters, loading skeleton, error state, empty state |
 
@@ -73,6 +77,25 @@ list pages report the contract's own error instead of showing placeholder rows.
 The products and orders modules expose no mutation until the backend publishes a
 write endpoint.
 
+## Sessions
+
+Signing in returns an access token that is kept in a module variable and a refresh
+token that arrives as an httpOnly cookie. Nothing token-shaped is written to
+`localStorage`. On a reload the app performs one silent refresh, which is what makes
+a session survive a refresh without ever exposing the refresh token to JavaScript.
+
+Two behaviours are deliberate and easy to break by accident:
+
+- **One refresh at a time.** `refreshSession` is single-flight. Concurrent 401s
+  share one call, because a second refresh presents an already-rotated cookie and
+  the backend reads that as token reuse, revoking the whole family.
+- **`401 invalid_credentials` is not a session problem.** A mistyped password on
+  deactivation must surface as a wrong password, not as a session expiry.
+
+The route guard is convenience, not a security boundary. Every guarded request is
+authorized by the backend.
+
 ## Project structure
 
-See `AGENTS.md` for the full tree and the module ownership rules.
+See `AGENTS.md` for the full tree, the module ownership rules, and the session and
+envelope conventions.
