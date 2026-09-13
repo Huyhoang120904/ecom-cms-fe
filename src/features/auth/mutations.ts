@@ -3,9 +3,26 @@ import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/r
 import { clearSession } from "lib/auth/session";
 
 import { authKeys } from "./query-keys";
-import { login, logout, register, switchShop } from "./api";
+import {
+  deactivateAccount,
+  deleteAvatar,
+  login,
+  logout,
+  register,
+  switchShop,
+  updateProfile,
+  uploadAvatar,
+} from "./api";
 
-import type { LoginPayload, RegisterPayload, Session, SwitchShopPayload } from "./types";
+import type {
+  DeactivatePayload,
+  LoginPayload,
+  Me,
+  ProfileUpdatePayload,
+  RegisterPayload,
+  Session,
+  SwitchShopPayload,
+} from "./types";
 
 /**
  * Invalidate every cached view of the session.
@@ -51,4 +68,58 @@ export function useLogoutMutation(): UseMutationResult<void, Error, void> {
 export function useSwitchShopMutation(): UseMutationResult<Session, Error, SwitchShopPayload> {
   const settle = useSessionSettled();
   return useMutation({ mutationFn: switchShop, onSuccess: settle });
+}
+
+/** Re-seed the cached identity from a mutation that returned it. */
+function useSeedMe(): (me: Me) => void {
+  const queryClient = useQueryClient();
+  return (me: Me) => {
+    queryClient.setQueryData(authKeys.me(), me);
+  };
+}
+
+/** Save the profile. Only the changed fields are sent. */
+export function useUpdateProfileMutation(): UseMutationResult<Me, Error, ProfileUpdatePayload> {
+  const seed = useSeedMe();
+  return useMutation({ mutationFn: updateProfile, onSuccess: seed });
+}
+
+/** Replace the avatar. */
+export function useUploadAvatarMutation(): UseMutationResult<Me, Error, File> {
+  const seed = useSeedMe();
+  return useMutation({ mutationFn: uploadAvatar, onSuccess: seed });
+}
+
+/** Remove the avatar, reverting the account to its monogram. */
+export function useDeleteAvatarMutation(): UseMutationResult<Me, Error, void> {
+  const queryClient = useQueryClient();
+  const seed = useSeedMe();
+  return useMutation({
+    mutationFn: async () => {
+      await deleteAvatar();
+      // The delete answers 204, so the fresh identity is re-fetched rather than
+      // guessed: the server decides what `avatar_url` becomes.
+      const { fetchMe } = await import("./api");
+      return fetchMe();
+    },
+    onSuccess: (me) => {
+      seed(me);
+      void queryClient.invalidateQueries({ queryKey: authKeys.me() });
+    },
+  });
+}
+
+/**
+ * Deactivate the account. One-way, so on success the seller is signed out and the
+ * whole cache is dropped rather than refreshed.
+ */
+export function useDeactivateMutation(): UseMutationResult<void, Error, DeactivatePayload> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deactivateAccount,
+    onSuccess: () => {
+      clearSession();
+      queryClient.clear();
+    },
+  });
 }

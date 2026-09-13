@@ -23,12 +23,17 @@ export { AuthContext, AuthProvider, useAuth } from "./auth-context";
 export type { AuthStatus, AuthValue } from "./auth-context";
 export { default as AuthLayout } from "./components/auth-layout";
 export { default as LoginForm } from "./components/login-form";
+export { default as ProfileForm } from "./components/profile-form";
 export { default as RegisterForm } from "./components/register-form";
 export {
+  useDeactivateMutation,
+  useDeleteAvatarMutation,
   useLoginMutation,
   useLogoutMutation,
   useRegisterMutation,
   useSwitchShopMutation,
+  useUpdateProfileMutation,
+  useUploadAvatarMutation,
 } from "./mutations";
 export { useMeQuery } from "./queries";
 export {
