@@ -1,56 +1,78 @@
-# [DashUI Next.js Free Admin Template](https://dashui-free-nextjs-admin-template.vercel.app/)
- Dash UI - Next.js Free admin / dashboard  template created by [Codescandy](https://codescandy.com/) and available on Github
+# ecom-cms-fe
 
-![dashui-free-nextjs-admin-template](https://user-images.githubusercontent.com/68774600/231716707-3da30d19-b826-4692-b03a-fed41376d250.jpg)
+Seller CMS for the ecommerce platform. Next.js (pages router) + TypeScript +
+Bootstrap/SCSS theme + TanStack Query + Zod, with module-local data boundaries
+and generated OpenAPI types.
 
- 
-## How to use DashUI?
+The visual base is the [DashUI Next.js admin
+template](https://github.com/codescandy/dashui-free-nextjs-admin-template); the
+template's demo pages and components were removed so the repository contains only
+the seller CMS.
 
-Clone the Dash UI repo:
-```
-git clone https://github.com/codescandy/dashui-free-nextjs-admin-template.git
-```
-```
-cd dashui-free-nextjs-admin-template
-```
+## Requirements
 
-##  🚀 Getting Started 
+- Node.js 20 or newer
+- pnpm 10.33.0 (`packageManager` in `package.json`)
+- A running `ecom-be` instance for contract generation and live data
 
-### Installation 👨🏻‍💻
+## Setup
 
-1. Install all packages
-
-```
-npm i
+```bash
+pnpm install --frozen-lockfile
+cp .env.example .env.local
 ```
 
-2. Run Development Server
+## Scripts
 
+| Command | Purpose |
+|---|---|
+| `pnpm run dev` | Start the development server on http://localhost:3000 |
+| `pnpm run build` | Production build |
+| `pnpm run start` | Serve the production build |
+| `pnpm run lint` | ESLint via `next lint` |
+| `pnpm run typecheck` | `tsc --noEmit` |
+| `pnpm run test` | Vitest run |
+| `pnpm run api:generate` | Regenerate `src/lib/api/generated.ts` from the backend |
+
+## Environment
+
+| Variable | Purpose |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | Origin of `ecom-be`, e.g. `http://localhost:8000` |
+| `NEXT_PUBLIC_SITE_URL` | Public origin of this CMS |
+
+Both have development defaults in `src/lib/api/client.ts` and
+`scripts/generate-api.mjs`; `.env.example` documents them.
+
+## Contract generation
+
+Start the backend first, then generate the client types:
+
+```bash
+cd ../ecom-be && uv run uvicorn ecom_be.main:app --port 8000
+cd ../ecom-cms-fe && pnpm run api:generate
 ```
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+The command writes `openapi/openapi.json` (a snapshot of the served document) and
+`src/lib/api/generated.ts`. The generated file is never hand-edited. If the
+backend is unavailable the command exits non-zero with the actual error.
 
-3. Build your project
+## Current surface
 
-```
-npm run build
-```
+The backend publishes health endpoints only. The CMS therefore ships three
+routes with no invented data:
 
-## Dash UI Next.js Free / Pro Version
+| Route | Content |
+|---|---|
+| `/` | Backend liveness/readiness status and an honest empty operational summary |
+| `/products` | URL-backed filters, loading skeleton, error state, empty state |
+| `/orders` | URL-backed filters, loading skeleton, error state, empty state |
 
-| Free Version        | Dash UI Pro
-|---------------------|-------------------------------------------- |
-| 1 Dashboard      | Coming Soon...                                |
-| Profile      | -                                           |
-| Settings | -                                     |
-| Billing |
-| Pricing |
-| 404 Error |
-| Authentication |
-| [Demo](https://dashui-free-nextjs-admin-template.vercel.app/) |
+`/api/v1/products` and `/api/v1/orders` do not exist on the backend yet, so the
+list pages report the contract's own error instead of showing placeholder rows.
+The products and orders modules expose no mutation until the backend publishes a
+write endpoint.
 
-## Technical Support or Questions
-If you have questions or need help integrating the product please [contact us](https://codescandy.com/contact-us/).
+## Project structure
 
+See `AGENTS.md` for the full tree and the module ownership rules.

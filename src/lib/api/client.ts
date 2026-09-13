@@ -1,0 +1,68 @@
+/**
+ * Transport configuration for the seller CMS.
+ *
+ * This module owns the API origin only. Feature modules own their own
+ * queries, mutations, schemas, and domain types; nothing here may import a
+ * feature module.
+ */
+
+const DEFAULT_API_URL = "http://localhost:8000";
+
+/** Base URL of the ecom-be API, without a trailing slash. */
+export const apiBaseUrl: string = (
+  process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_URL
+).replace(/\/+$/, "");
+
+/** Path of the versioned OpenAPI document published by ecom-be. */
+export const openApiPath = "/api/v1/openapi.json";
+
+/** Error raised for a non-2xx API response. */
+export class ApiError extends Error {
+  readonly code: string;
+  readonly status: number;
+
+  constructor(code: string, message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.code = code;
+    this.status = status;
+  }
+}
+
+/** Shape of the backend's stable error body. */
+interface ApiErrorBody {
+  error?: unknown;
+  message?: unknown;
+}
+
+function isErrorBody(value: unknown): value is ApiErrorBody {
+  return typeof value === "object" && value !== null;
+}
+
+/** Build an absolute URL for a versioned API path. */
+export function apiUrl(path: string): string {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return `${apiBaseUrl}${normalized}`;
+}
+
+/**
+ * Read a JSON response, surfacing non-2xx responses as an {@link ApiError}.
+ *
+ * @throws {ApiError} When the response status is not 2xx.
+ */
+export async function readJson<T = unknown>(response: Response): Promise<T> {
+  const body: unknown = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const errorBody = isErrorBody(body) ? body : {};
+    const code =
+      typeof errorBody.error === "string" ? errorBody.error : "request_failed";
+    const message =
+      typeof errorBody.message === "string"
+        ? errorBody.message
+        : `${response.status} ${response.statusText}`;
+    throw new ApiError(code, message, response.status);
+  }
+
+  return body as T;
+}

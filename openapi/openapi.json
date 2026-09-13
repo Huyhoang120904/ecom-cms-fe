@@ -1,0 +1,119 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ecom-be",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health/live": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Liveness",
+        "operationId": "liveness_health_live_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LivenessResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Readiness",
+        "operationId": "readiness_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LivenessResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status"
+          },
+          "service": {
+            "type": "string",
+            "title": "Service"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "service"
+        ],
+        "title": "LivenessResponse"
+      },
+      "ReadinessResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "not_ready"
+            ],
+            "title": "Status"
+          },
+          "dependencies": {
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "unavailable"
+              ]
+            },
+            "propertyNames": {
+              "enum": [
+                "database",
+                "redis"
+              ]
+            },
+            "type": "object",
+            "title": "Dependencies"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "dependencies"
+        ],
+        "title": "ReadinessResponse"
+      }
+    }
+  }
+}
