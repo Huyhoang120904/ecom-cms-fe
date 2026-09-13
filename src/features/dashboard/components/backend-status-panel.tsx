@@ -17,6 +17,9 @@ export default function BackendStatusPanel() {
     { name: "Redis", status: readiness.data?.dependencies.redis },
   ];
 
+  const apiUnreachable = liveness.isError || readiness.isError;
+  const notReady = readiness.data?.status === "not_ready";
+
   return (
     <Card className="border-0 shadow-sm h-100">
       <Card.Header className="bg-white border-bottom px-4 py-3">
@@ -29,9 +32,16 @@ export default function BackendStatusPanel() {
       </Card.Header>
 
       <Card.Body className="px-4 py-4">
-        {liveness.isError || readiness.isError ? (
+        {apiUnreachable ? (
           <p className="text-danger mb-3">
             The API did not respond. Start ecom-be, then reload this page.
+          </p>
+        ) : null}
+
+        {notReady ? (
+          <p className="text-warning-emphasis mb-3">
+            The API is running but reports itself not ready. Start the local
+            PostgreSQL and Redis services, then reload.
           </p>
         ) : null}
 
@@ -48,7 +58,7 @@ export default function BackendStatusPanel() {
 
           <dt className="col-sm-4 fw-normal text-muted">Readiness</dt>
           <dd className="col-sm-8">
-            <Badge bg={readiness.isSuccess ? "success" : "secondary"}>
+            <Badge bg={notReady ? "warning" : "success"}>
               {readiness.data?.status ?? "unknown"}
             </Badge>
           </dd>
