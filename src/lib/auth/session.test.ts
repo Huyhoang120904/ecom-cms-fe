@@ -183,6 +183,42 @@ describe("session", () => {
       expect(response.status).toBe(403);
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
+
+    it("does not refresh a 401 that means wrong credentials, not an ended session", async () => {
+      // Deactivating with a mistyped password answers 401 invalid_credentials. A
+      // refresh here would bury "wrong password" under a session error, and would
+      // rotate the cookie for no reason.
+      setAccessToken("token-1");
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(
+          jsonResponse(401, { error: "invalid_credentials", message: "Authentication failed" }),
+        );
+      vi.stubGlobal("fetch", fetchMock);
+
+      const response = await authFetch("/api/v1/auth/deactivate", { method: "POST" });
+
+      expect(response.status).toBe(401);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(getAccessToken()).toBe("token-1");
+    });
+
+    it("leaves the body readable after inspecting the 401 code", async () => {
+      // The check parses the body to read `error`, so it must clone first or the
+      // caller's own readJson would see an already-consumed stream.
+      setAccessToken("token-1");
+      vi.stubGlobal(
+        "fetch",
+        vi
+          .fn()
+          .mockResolvedValue(jsonResponse(401, { error: "invalid_credentials", message: "Nope" })),
+      );
+
+      const response = await authFetch("/api/v1/auth/deactivate", { method: "POST" });
+      const body = (await response.json()) as { error: string };
+
+      expect(body.error).toBe("invalid_credentials");
+    });
   });
 
   describe("refreshSession", () => {

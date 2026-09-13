@@ -45,6 +45,17 @@ export function apiUrl(path: string): string {
   return `${apiBaseUrl}${normalized}`;
 }
 
+function errorFrom(response: Response, body: unknown): ApiError {
+  const errorBody = isErrorBody(body) ? body : {};
+  const code =
+    typeof errorBody.error === "string" ? errorBody.error : "request_failed";
+  const message =
+    typeof errorBody.message === "string"
+      ? errorBody.message
+      : `${response.status} ${response.statusText}`;
+  return new ApiError(code, message, response.status);
+}
+
 /**
  * Read a JSON response, surfacing non-2xx responses as an {@link ApiError}.
  *
@@ -54,15 +65,25 @@ export async function readJson<T = unknown>(response: Response): Promise<T> {
   const body: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const errorBody = isErrorBody(body) ? body : {};
-    const code =
-      typeof errorBody.error === "string" ? errorBody.error : "request_failed";
-    const message =
-      typeof errorBody.message === "string"
-        ? errorBody.message
-        : `${response.status} ${response.statusText}`;
-    throw new ApiError(code, message, response.status);
+    throw errorFrom(response, body);
   }
 
   return body as T;
+}
+
+/**
+ * Assert that a response succeeded and discard its body.
+ *
+ * For the endpoints that answer `204 No Content`: there is nothing to parse, but a
+ * failure still has to be raised. Without this, a rejected deletion would resolve
+ * and the caller would report success.
+ *
+ * @throws {ApiError} When the response status is not 2xx.
+ */
+export async function assertOk(response: Response): Promise<void> {
+  if (response.ok) {
+    return;
+  }
+  const body: unknown = await response.json().catch(() => null);
+  throw errorFrom(response, body);
 }

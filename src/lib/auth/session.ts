@@ -120,11 +120,34 @@ export function refreshSession(): Promise<string> {
 }
 
 /**
+ * 401 codes that mean "the credentials in this request were wrong", not "your
+ * session is over". Refreshing on one of these would replace a precise error with a
+ * confusing one: a mistyped password would surface as a session expiry.
+ *
+ * The backend distinguishes these by code, so the client can too.
+ */
+const NON_SESSION_401_CODES = new Set(["invalid_credentials"]);
+
+async function isSessionProblem(response: Response): Promise<boolean> {
+  // `clone` first: reading the body to inspect the code would consume it, and the
+  // caller still needs to read the same response.
+  const body: unknown = await response
+    .clone()
+    .json()
+    .catch(() => null);
+  const code =
+    typeof body === "object" && body !== null && "error" in body
+      ? (body as { error: unknown }).error
+      : undefined;
+  return !(typeof code === "string" && NON_SESSION_401_CODES.has(code));
+}
+
+/**
  * Fetch a versioned API path with the session attached.
  *
- * On a 401 it refreshes once and replays the request once. The retry is
- * deliberately capped: an endpoint that always answers 401 must not become an
- * infinite refresh loop.
+ * On a 401 caused by the session it refreshes once and replays the request once.
+ * The retry is deliberately capped: an endpoint that always answers 401 must not
+ * become an infinite refresh loop.
  */
 export async function authFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const send = (token: string | null): Promise<Response> => {
@@ -154,7 +177,7 @@ export async function authFetch(path: string, init: RequestInit = {}): Promise<R
   };
 
   const response = await send(accessToken);
-  if (response.status !== 401) {
+  if (response.status !== 401 || !(await isSessionProblem(response))) {
     return response;
   }
 
