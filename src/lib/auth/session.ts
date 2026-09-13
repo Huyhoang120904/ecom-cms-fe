@@ -22,6 +22,7 @@ import { unwrapEnvelope } from "lib/api/envelope";
 let accessToken: string | null = null;
 let refreshInFlight: Promise<string> | null = null;
 let onSessionExpired: (() => void) | null = null;
+let suppressExpiryNotification = false;
 
 /** Replace the in-memory access token. Pass `null` when signing out. */
 export function setAccessToken(token: string | null): void {
@@ -37,6 +38,29 @@ export function getAccessToken(): string | null {
 export function clearSession(): void {
   accessToken = null;
   refreshInFlight = null;
+  // Any notification still suppressed belongs to a restore attempt that is over.
+  suppressExpiryNotification = false;
+}
+
+/**
+ * Try the refresh once, without treating a failure as an ended session.
+ *
+ * Used on boot: a first-time visitor has no refresh cookie, so `/auth/refresh`
+ * answers 401 for a perfectly normal reason. That must leave the app on the
+ * signed-out path rather than firing the "your session ended" notification at
+ * someone who never had one.
+ *
+ * @returns the access token, or `null` when there is no session to restore.
+ */
+export async function restoreSession(): Promise<string | null> {
+  suppressExpiryNotification = true;
+  try {
+    return await refreshSession();
+  } catch {
+    return null;
+  } finally {
+    suppressExpiryNotification = false;
+  }
 }
 
 /**
@@ -50,6 +74,9 @@ export function setSessionExpiredHandler(handler: (() => void) | null): void {
 }
 
 function notifySessionExpired(): void {
+  if (suppressExpiryNotification) {
+    return;
+  }
   const handler = onSessionExpired;
   // Cleared first so a handler that signs out cannot re-enter this path.
   onSessionExpired = null;

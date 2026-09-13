@@ -9,6 +9,8 @@ import type { components } from "lib/api/generated";
 
 export type Session = components["schemas"]["SessionData"];
 export type Me = components["schemas"]["MeData"];
+/** The `me` payload's name in the plan and the test fixtures. */
+export type MePayload = Me;
 export type User = components["schemas"]["UserData"];
 export type Shop = components["schemas"]["ShopData"];
 export type Membership = components["schemas"]["MembershipData"];

@@ -19,6 +19,9 @@ export {
   uploadShopBackground,
 } from "./api";
 export { authKeys } from "./query-keys";
+export { AuthContext, AuthProvider, useAuth } from "./auth-context";
+export type { AuthStatus, AuthValue } from "./auth-context";
+export { useMeQuery } from "./queries";
 export {
   deactivateSchema,
   deleteShopSchema,
@@ -46,6 +49,7 @@ export type {
   DeleteShopPayload,
   LoginPayload,
   Me,
+  MePayload,
   Membership,
   ProfileUpdatePayload,
   RegisterPayload,
