@@ -13,14 +13,11 @@ import { authFetch, clearSession, setAccessToken } from "lib/auth/session";
 
 import type {
   DeactivatePayload,
-  DeleteShopPayload,
   LoginPayload,
   Me,
   ProfileUpdatePayload,
   RegisterPayload,
   Session,
-  Shop,
-  ShopUpdatePayload,
   SwitchShopPayload,
 } from "./types";
 
@@ -122,40 +119,6 @@ export async function switchShop(payload: SwitchShopPayload): Promise<Session> {
     body: JSON.stringify(payload),
   });
   return readSession(response);
-}
-
-export async function updateShop(payload: ShopUpdatePayload): Promise<Shop> {
-  const response = await authFetch("/api/v1/shops/active", {
-    method: "PATCH",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  return unwrapEnvelope(await readJson(response)) as Shop;
-}
-
-export async function uploadShopBackground(file: File): Promise<Shop> {
-  const form = new FormData();
-  form.append("file", file);
-  const response = await authFetch("/api/v1/shops/active/background", {
-    method: "POST",
-    body: form,
-  });
-  return unwrapEnvelope(await readJson(response)) as Shop;
-}
-
-export async function deleteShopBackground(): Promise<void> {
-  await assertOk(await authFetch("/api/v1/shops/active/background", { method: "DELETE" }));
-}
-
-/** Retire the active shop. The backend compares the typed name against its own. */
-export async function deleteShop(payload: DeleteShopPayload): Promise<void> {
-  await assertOk(
-    await authFetch("/api/v1/shops/active", {
-      method: "DELETE",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload),
-    }),
-  );
 }
 
 /**

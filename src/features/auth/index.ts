@@ -6,17 +6,13 @@
 export {
   deactivateAccount,
   deleteAvatar,
-  deleteShop,
-  deleteShopBackground,
   fetchMe,
   login,
   logout,
   register,
   switchShop,
   updateProfile,
-  updateShop,
   uploadAvatar,
-  uploadShopBackground,
 } from "./api";
 export { authKeys } from "./query-keys";
 export { AuthContext, AuthProvider, useAuth } from "./auth-context";
@@ -60,7 +56,6 @@ export type {
 } from "./schemas";
 export type {
   DeactivatePayload,
-  DeleteShopPayload,
   LoginPayload,
   Me,
   MePayload,
@@ -70,7 +65,6 @@ export type {
   Role,
   Session,
   Shop,
-  ShopUpdatePayload,
   SwitchShopPayload,
   User,
 } from "./types";

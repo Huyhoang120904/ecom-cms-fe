@@ -108,8 +108,17 @@ describe("shopUpdateSchema", () => {
     expect(shopUpdateSchema.safeParse({ contact_email: "not-an-email" }).success).toBe(false);
   });
 
-  it("accepts a website without a scheme, because the backend does", () => {
-    expect(shopUpdateSchema.safeParse({ website: "example.com" }).success).toBe(true);
+  it("rejects a website without a scheme, which the backend also refuses", () => {
+    expect(shopUpdateSchema.safeParse({ website: "example.com" }).success).toBe(false);
+  });
+
+  it("accepts an absolute website", () => {
+    expect(shopUpdateSchema.safeParse({ website: "https://example.com" }).success).toBe(true);
+    expect(shopUpdateSchema.safeParse({ website: "http://example.com" }).success).toBe(true);
+  });
+
+  it("accepts an empty website, which means clear it", () => {
+    expect(shopUpdateSchema.safeParse({ website: "" }).success).toBe(true);
   });
 });
 

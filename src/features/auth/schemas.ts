@@ -88,7 +88,16 @@ export const shopUpdateSchema = z.object({
   description: z.string().max(SHOP_DESCRIPTION_MAX, `Use at most ${SHOP_DESCRIPTION_MAX} characters.`).nullish(),
   contact_email: z.string().max(EMAIL_MAX).email("Enter a valid email address.").nullish(),
   contact_phone: z.string().max(PHONE_MAX, `Use at most ${PHONE_MAX} characters.`).nullish(),
-  website: z.string().max(SHOP_WEBSITE_MAX, `Use at most ${SHOP_WEBSITE_MAX} characters.`).nullish(),
+  // The backend requires an absolute http or https URL, so a bare domain is
+  // rejected here too rather than surfacing as a 422 after a round trip.
+  website: z
+    .string()
+    .max(SHOP_WEBSITE_MAX, `Use at most ${SHOP_WEBSITE_MAX} characters.`)
+    .refine(
+      (value) => value.trim() === "" || /^https?:\/\//i.test(value.trim()),
+      "Enter a full URL, including http:// or https://.",
+    )
+    .nullish(),
 });
 
 // Mirrors DeactivateRequest.
