@@ -21,6 +21,15 @@ export {
 export { authKeys } from "./query-keys";
 export { AuthContext, AuthProvider, useAuth } from "./auth-context";
 export type { AuthStatus, AuthValue } from "./auth-context";
+export { default as AuthLayout } from "./components/auth-layout";
+export { default as LoginForm } from "./components/login-form";
+export { default as RegisterForm } from "./components/register-form";
+export {
+  useLoginMutation,
+  useLogoutMutation,
+  useRegisterMutation,
+  useSwitchShopMutation,
+} from "./mutations";
 export { useMeQuery } from "./queries";
 export {
   deactivateSchema,
@@ -37,12 +46,12 @@ export {
   toShopPayload,
 } from "./schemas";
 export type {
-  DeactivateForm,
-  DeleteShopForm,
-  LoginForm,
-  ProfileUpdateForm,
-  RegisterForm,
-  ShopUpdateForm,
+  DeactivateFormValues,
+  DeleteShopFormValues,
+  LoginFormValues,
+  ProfileUpdateFormValues,
+  RegisterFormValues,
+  ShopUpdateFormValues,
 } from "./schemas";
 export type {
   DeactivatePayload,

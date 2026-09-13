@@ -11,6 +11,21 @@
 
 import { z } from "zod";
 
+import {
+  BIO_MAX,
+  EMAIL_MAX,
+  FULL_NAME_MAX,
+  FULL_NAME_MIN,
+  JOB_TITLE_MAX,
+  PASSWORD_MAX,
+  PASSWORD_MIN,
+  PHONE_MAX,
+  SHOP_DESCRIPTION_MAX,
+  SHOP_NAME_MAX,
+  SHOP_NAME_MIN,
+  SHOP_WEBSITE_MAX,
+} from "lib/auth/constants";
+
 import type {
   DeactivatePayload,
   DeleteShopPayload,
@@ -22,26 +37,31 @@ import type {
 
 // Mirrors RegisterRequest.
 export const registerSchema = z.object({
-  email: z.string().min(1, "Enter your email.").max(254).email("Enter a valid email address."),
+  email: z.string().min(1, "Enter your email.").max(EMAIL_MAX).email("Enter a valid email address."),
   password: z
     .string()
-    .min(12, "Use at least 12 characters.")
-    .max(128, "Use at most 128 characters."),
+    .min(PASSWORD_MIN, `Use at least ${PASSWORD_MIN} characters.`)
+    .max(PASSWORD_MAX, `Use at most ${PASSWORD_MAX} characters.`),
   full_name: z
     .string()
-    .min(1, "Enter your name.")
-    .max(120, "Use at most 120 characters."),
+    .min(FULL_NAME_MIN, "Enter your name.")
+    .max(FULL_NAME_MAX, `Use at most ${FULL_NAME_MAX} characters.`),
   shop_name: z
     .string()
-    .min(2, "Use at least 2 characters.")
-    .max(80, "Use at most 80 characters."),
+    .min(SHOP_NAME_MIN, `Use at least ${SHOP_NAME_MIN} characters.`)
+    .max(SHOP_NAME_MAX, `Use at most ${SHOP_NAME_MAX} characters.`),
 });
 
 // Mirrors LoginRequest. The password has no minimum beyond presence on purpose:
 // rejecting a short password locally would report the stored password's shape.
+// The email is format-checked so an obvious typo fails without a round trip.
 export const loginSchema = z.object({
-  email: z.string().min(1, "Enter your email.").max(254),
-  password: z.string().min(1, "Enter your password.").max(128),
+  email: z
+    .string()
+    .min(1, "Enter your email.")
+    .max(EMAIL_MAX)
+    .email("Enter a valid email address."),
+  password: z.string().min(1, "Enter your password.").max(PASSWORD_MAX),
 });
 
 // Mirrors ProfileUpdateRequest. An absent key is left alone; an explicit null
@@ -49,43 +69,47 @@ export const loginSchema = z.object({
 export const profileUpdateSchema = z.object({
   full_name: z
     .string()
-    .min(1, "Enter your name.")
-    .max(120, "Use at most 120 characters.")
+    .min(FULL_NAME_MIN, "Enter your name.")
+    .max(FULL_NAME_MAX, `Use at most ${FULL_NAME_MAX} characters.`)
     .nullish(),
-  bio: z.string().max(500, "Use at most 500 characters.").nullish(),
-  phone: z.string().max(32, "Use at most 32 characters.").nullish(),
-  job_title: z.string().max(80, "Use at most 80 characters.").nullish(),
+  bio: z.string().max(BIO_MAX, `Use at most ${BIO_MAX} characters.`).nullish(),
+  phone: z.string().max(PHONE_MAX, `Use at most ${PHONE_MAX} characters.`).nullish(),
+  job_title: z.string().max(JOB_TITLE_MAX, `Use at most ${JOB_TITLE_MAX} characters.`).nullish(),
 });
 
 // Mirrors ShopUpdateRequest. `slug` is deliberately absent: it is derived once at
 // creation and a rename must not rewrite a public URL.
 export const shopUpdateSchema = z.object({
-  name: z.string().min(2, "Use at least 2 characters.").max(80, "Use at most 80 characters.").nullish(),
-  description: z.string().max(300, "Use at most 300 characters.").nullish(),
-  contact_email: z.string().max(254).email("Enter a valid email address.").nullish(),
-  contact_phone: z.string().max(32, "Use at most 32 characters.").nullish(),
-  website: z.string().max(255, "Use at most 255 characters.").nullish(),
+  name: z
+    .string()
+    .min(SHOP_NAME_MIN, `Use at least ${SHOP_NAME_MIN} characters.`)
+    .max(SHOP_NAME_MAX, `Use at most ${SHOP_NAME_MAX} characters.`)
+    .nullish(),
+  description: z.string().max(SHOP_DESCRIPTION_MAX, `Use at most ${SHOP_DESCRIPTION_MAX} characters.`).nullish(),
+  contact_email: z.string().max(EMAIL_MAX).email("Enter a valid email address.").nullish(),
+  contact_phone: z.string().max(PHONE_MAX, `Use at most ${PHONE_MAX} characters.`).nullish(),
+  website: z.string().max(SHOP_WEBSITE_MAX, `Use at most ${SHOP_WEBSITE_MAX} characters.`).nullish(),
 });
 
 // Mirrors DeactivateRequest.
 export const deactivateSchema = z.object({
-  password: z.string().min(1, "Enter your password.").max(128),
+  password: z.string().min(1, "Enter your password.").max(PASSWORD_MAX),
 });
 
 // Mirrors DeleteShopRequest.
 export const deleteShopSchema = z.object({
   confirm_shop_name: z
     .string()
-    .min(2, "Type the shop name.")
-    .max(80, "Use at most 80 characters."),
+    .min(SHOP_NAME_MIN, "Type the shop name.")
+    .max(SHOP_NAME_MAX, `Use at most ${SHOP_NAME_MAX} characters.`),
 });
 
-export type RegisterForm = z.infer<typeof registerSchema>;
-export type LoginForm = z.infer<typeof loginSchema>;
-export type ProfileUpdateForm = z.infer<typeof profileUpdateSchema>;
-export type ShopUpdateForm = z.infer<typeof shopUpdateSchema>;
-export type DeactivateForm = z.infer<typeof deactivateSchema>;
-export type DeleteShopForm = z.infer<typeof deleteShopSchema>;
+export type RegisterFormValues = z.infer<typeof registerSchema>;
+export type LoginFormValues = z.infer<typeof loginSchema>;
+export type ProfileUpdateFormValues = z.infer<typeof profileUpdateSchema>;
+export type ShopUpdateFormValues = z.infer<typeof shopUpdateSchema>;
+export type DeactivateFormValues = z.infer<typeof deactivateSchema>;
+export type DeleteShopFormValues = z.infer<typeof deleteShopSchema>;
 
 /**
  * Convert validated form values into the request body.
@@ -94,7 +118,7 @@ export type DeleteShopForm = z.infer<typeof deleteShopSchema>;
  * a field they never touched is omitted (unchanged). Collapsing those two into one
  * would make it impossible to clear a bio.
  */
-export function toProfilePayload(form: ProfileUpdateForm): ProfileUpdatePayload {
+export function toProfilePayload(form: ProfileUpdateFormValues): ProfileUpdatePayload {
   const payload: ProfileUpdatePayload = {};
   if (form.full_name != null) payload.full_name = form.full_name;
   if (form.bio !== undefined) payload.bio = form.bio;
@@ -103,7 +127,7 @@ export function toProfilePayload(form: ProfileUpdateForm): ProfileUpdatePayload 
   return payload;
 }
 
-export function toShopPayload(form: ShopUpdateForm): ShopUpdatePayload {
+export function toShopPayload(form: ShopUpdateFormValues): ShopUpdatePayload {
   const payload: ShopUpdatePayload = {};
   if (form.name != null) payload.name = form.name;
   if (form.description !== undefined) payload.description = form.description;
@@ -113,7 +137,7 @@ export function toShopPayload(form: ShopUpdateForm): ShopUpdatePayload {
   return payload;
 }
 
-export function toRegisterPayload(form: RegisterForm): RegisterPayload {
+export function toRegisterPayload(form: RegisterFormValues): RegisterPayload {
   return {
     email: form.email,
     password: form.password,
@@ -122,14 +146,14 @@ export function toRegisterPayload(form: RegisterForm): RegisterPayload {
   };
 }
 
-export function toLoginPayload(form: LoginForm): LoginPayload {
+export function toLoginPayload(form: LoginFormValues): LoginPayload {
   return { email: form.email, password: form.password };
 }
 
-export function toDeactivatePayload(form: DeactivateForm): DeactivatePayload {
+export function toDeactivatePayload(form: DeactivateFormValues): DeactivatePayload {
   return { password: form.password };
 }
 
-export function toDeleteShopPayload(form: DeleteShopForm): DeleteShopPayload {
+export function toDeleteShopPayload(form: DeleteShopFormValues): DeleteShopPayload {
   return { confirm_shop_name: form.confirm_shop_name };
 }
