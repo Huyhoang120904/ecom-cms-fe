@@ -1,63 +1,58 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/router";
 import { Col, Container, Row } from "react-bootstrap";
 
-import { navigationItems, type NavigationItem } from "app/shell/navigation";
+import { useAuth } from "features/auth/auth-context";
+import { useLogoutMutation, useSwitchShopMutation } from "features/auth/mutations";
+
+import AccountMenu from "./account-menu";
+import ShellNavigation from "./shell-navigation";
 
 interface AppShellProps {
   children: ReactNode;
 }
 
-function isActive(item: NavigationItem, pathname: string): boolean {
-  return item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-}
-
 /**
  * Seller CMS shell.
  *
- * Owns the header, the capability navigation, and the content region. The
- * account area shows a signed-out placeholder because there is no identity
- * provider yet — no fake account is rendered.
+ * Owns the header, the capability navigation, and the content region. The account
+ * area renders the real signed-in seller, or nothing at all while the session is
+ * unresolved, so the shell never shows a placeholder identity.
  */
 export default function AppShell({ children }: AppShellProps) {
-  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { session } = useAuth();
+  const logout = useLogoutMutation();
+  const switchShop = useSwitchShopMutation();
 
   return (
     <div className="d-flex flex-column min-vh-100">
       <header className="border-bottom bg-white">
-        <Container fluid className="px-6 py-3">
-          <Row className="align-items-center g-2">
+        <Container fluid className="px-4 py-3">
+          <Row className="align-items-center g-2 flex-nowrap">
             <Col xs="auto">
               <span className="fw-bold">Seller CMS</span>
             </Col>
 
             <Col className="d-none d-md-block">
-              <nav aria-label="Seller capabilities">
-                <ul className="nav">
-                  {navigationItems.map((item) => (
-                    <li className="nav-item" key={item.key}>
-                      <Link
-                        href={item.href}
-                        className={`nav-link${
-                          isActive(item, router.pathname) ? " active" : ""
-                        }`}
-                      >
-                        {item.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
+              <ShellNavigation />
             </Col>
 
-            <Col xs="auto" className="ms-auto text-muted small d-none d-md-block">
-              Not signed in
+            <Col xs="auto" className="ms-auto d-none d-md-flex align-items-center gap-2">
+              <AccountMenu
+                onSwitchShop={(shopId) => switchShop.mutate({ shop_id: shopId })}
+              />
+              <button
+                type="button"
+                className="btn btn-link btn-sm text-muted text-decoration-none p-1"
+                disabled={logout.isPending}
+                onClick={() => logout.mutate()}
+              >
+                {logout.isPending ? "Signing out" : "Sign out"}
+              </button>
             </Col>
 
-            <Col xs="auto" className="d-md-none">
+            <Col xs="auto" className="ms-auto d-md-none">
               <button
                 type="button"
                 className="btn btn-outline-secondary btn-sm"
@@ -71,23 +66,24 @@ export default function AppShell({ children }: AppShellProps) {
           </Row>
 
           {menuOpen ? (
-            <nav id="seller-menu" aria-label="Seller capabilities" className="d-md-none pt-3">
-              <ul className="nav flex-column">
-                {navigationItems.map((item) => (
-                  <li className="nav-item" key={item.key}>
-                    <Link
-                      href={item.href}
-                      className={`nav-link${
-                        isActive(item, router.pathname) ? " active" : ""
-                      }`}
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
+            <div id="seller-menu" className="d-md-none pt-3">
+              <ShellNavigation stacked onNavigate={() => setMenuOpen(false)} />
+              <div className="pt-2 border-top mt-2">
+                {session ? (
+                  <p className="small text-muted mb-2">
+                    {session.user.email} on {session.active_shop.name}
+                  </p>
+                ) : null}
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  disabled={logout.isPending}
+                  onClick={() => logout.mutate()}
+                >
+                  {logout.isPending ? "Signing out" : "Sign out"}
+                </button>
+              </div>
+            </div>
           ) : null}
         </Container>
       </header>
