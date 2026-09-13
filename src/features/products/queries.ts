@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
+import { isRetriable } from "lib/query/retry";
+
 import { fetchProducts } from "./api";
 import { productsKeys } from "./query-keys";
 
@@ -12,6 +14,6 @@ export function useProductsQuery(filters: ProductFilters) {
     queryFn: () => fetchProducts(filters),
     // The endpoint is not published yet, so a missing contract is a real
     // state rather than a transient failure worth retrying.
-    retry: false,
+    retry: isRetriable,
   });
 }
