@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, ChevronsDown, Eye, ShoppingBag } from "react-feather";
+import { Eye, ShoppingBag } from "react-feather";
 
 import EmptyState from "widgets/empty-state";
 import type { DataTableColumn } from "widgets/data-table";
@@ -74,35 +74,6 @@ export function OrdersEmptyState() {
   );
 }
 
-/** Sort control that lives inside a column header so sorting stays feature-owned. */
-function SortButton({
-  label,
-  column,
-  sort,
-  onSort,
-}: {
-  label: string;
-  column: OrderSortKey;
-  sort: OrderSort;
-  onSort: (column: OrderSortKey) => void;
-}) {
-  const active = sort.key === column;
-  const Icon = active ? (sort.direction === "asc" ? ChevronUp : ChevronDown) : ChevronsDown;
-
-  return (
-    <button
-      type="button"
-      className="table-sort-btn"
-      aria-label={`Sort orders by ${label}`}
-      aria-pressed={active}
-      onClick={() => onSort(column)}
-    >
-      <span>{label}</span>
-      <Icon size={14} aria-hidden="true" />
-    </button>
-  );
-}
-
 function formatPrice(total?: number | string): string {
   if (total === undefined || total === null || total === "") return "-";
   const num = typeof total === "number" ? total : Number(total);
@@ -139,9 +110,11 @@ export function orderColumns({
   return [
     {
       id: "reference",
-      header: <SortButton label="Order" column="reference" sort={sort} onSort={onSort} />,
+      header: "Order",
+      sortable: true,
       width: "24%",
       skeletonWidth: 110,
+      mobile: { label: "Order" },
       render: (order) => (
         <>
           <span className="fw-semibold text-primary d-block">{order.reference}</span>
@@ -151,9 +124,11 @@ export function orderColumns({
     },
     {
       id: "customer",
-      header: <SortButton label="Customer" column="customer" sort={sort} onSort={onSort} />,
+      header: "Customer",
+      sortable: true,
       width: "24%",
       skeletonWidth: 100,
+      mobile: { label: "Customer" },
       render: (order) => (
         <div className="d-flex align-items-center">
           <div className="customer-avatar me-2" aria-hidden="true">
@@ -167,6 +142,7 @@ export function orderColumns({
       id: "items",
       header: "Items",
       skeletonWidth: 45,
+      mobile: { label: "Items" },
       render: (order) => (
         <span className="text-secondary small">
           {order.itemsCount} {order.itemsCount === 1 ? "item" : "items"}
@@ -175,20 +151,26 @@ export function orderColumns({
     },
     {
       id: "total",
-      header: <SortButton label="Total" column="total" sort={sort} onSort={onSort} />,
+      header: "Total",
+      sortable: true,
       skeletonWidth: 65,
+      mobile: { label: "Total" },
       render: (order) => <span className="fw-semibold text-dark">{formatPrice(order.total)}</span>,
     },
     {
       id: "status",
       header: "Status",
       skeletonWidth: 76,
+      mobile: { label: "Status" },
       render: (order) => <OrderStatusBadge status={order.status} />,
     },
     {
       id: "placed",
-      header: <SortButton label="Placed" column="placedAt" sort={sort} onSort={onSort} />,
+      header: "Placed",
+      sortable: true,
+      sortKey: "placedAt",
       skeletonWidth: 90,
+      mobile: { label: "Placed" },
       render: (order) => <span className="text-muted small">{formatDate(order.placedAt)}</span>,
     },
     {
@@ -196,6 +178,7 @@ export function orderColumns({
       header: "Actions",
       align: "end",
       skeletonWidth: 28,
+      mobile: {},
       render: (order) => (
         <button
           type="button"

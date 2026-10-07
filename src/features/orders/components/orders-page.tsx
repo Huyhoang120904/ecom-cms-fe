@@ -7,11 +7,13 @@ import { CheckCircle, Clock, Download, RefreshCw, ShoppingBag } from "react-feat
 
 import DataTable from "widgets/data-table";
 import FilterBar from "widgets/filter-bar";
+import FilterChips from "widgets/filter-chips";
 import PageShell from "widgets/page-shell";
 import Pagination from "widgets/pagination";
+import SegmentedControl from "widgets/segmented-control";
 import StatCard from "widgets/stat-card";
 
-import { OrdersEmptyState, OrderStatusBadge, orderColumns, type OrderSort, type OrderSortKey } from "features/orders/components/orders-table";
+import { OrdersEmptyState, OrderStatusBadge, orderColumns, type OrderSort, type OrderSortKey, type SortDirection } from "features/orders/components/orders-table";
 import { MOCK_ORDERS, type MockOrder } from "features/orders/mock-data";
 import { parseOrderFilters } from "features/orders/schemas";
 
@@ -113,6 +115,13 @@ export default function OrdersPage() {
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
+  function updatePageSize(size: number) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("pageSize", String(size));
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
   function updateSearch(value: string) {
     setSearch(value);
     updateFilters({ search: value || undefined });
@@ -201,25 +210,54 @@ export default function OrdersPage() {
               onChange={(event) => updateSearch(event.target.value)}
             />
           </div>
-          <div style={{ minWidth: 180 }}>
-            <label htmlFor="order-status-filter" className="visually-hidden">Filter by status</label>
-            <select
-              id="order-status-filter"
-              className="form-select form-select-sm"
-              value={status}
-              onChange={(event) => updateStatus(event.target.value)}
-            >
-              <option value="all">All statuses</option>
-              <option value="completed">Completed</option>
-              <option value="processing">Processing</option>
-              <option value="pending">Pending</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </div>
+          <SegmentedControl
+            label="Filter by status"
+            name="order-status"
+            options={[
+              { value: "all", label: "All" },
+              { value: "completed", label: "Completed" },
+              { value: "processing", label: "Processing" },
+              { value: "pending", label: "Pending" },
+              { value: "cancelled", label: "Cancelled" },
+            ]}
+            value={status}
+            onChange={updateStatus}
+          />
         </FilterBar>
+        <FilterChips
+          chips={search.trim() ? [{ id: "search", label: "Search", value: search.trim() }] : []}
+          onRemove={(id) => {
+            if (id === "search") updateSearch("");
+          }}
+          onClearAll={resetFilters}
+        />
+        <div className="d-md-none px-4 pt-3">
+          <label htmlFor="order-sort" className="visually-hidden">
+            Sort orders
+          </label>
+          <select
+            id="order-sort"
+            className="form-select form-select-sm"
+            value={`${sort.key}-${sort.direction}`}
+            onChange={(event) => {
+              const [key, direction] = event.target.value.split("-") as [
+                OrderSortKey,
+                SortDirection,
+              ];
+              setSort({ key, direction });
+            }}
+          >
+            <option value="placedAt-desc">Newest first</option>
+            <option value="placedAt-asc">Oldest first</option>
+            <option value="total-desc">Total: high to low</option>
+            <option value="total-asc">Total: low to high</option>
+          </select>
+        </div>
 
         <DataTable
           columns={orderColumns({ sort, onSort: toggleSort, onView: setSelectedOrder })}
+          sort={{ key: sort.key, direction: sort.direction }}
+          onSortChange={(key) => toggleSort(key as OrderSortKey)}
           rows={pagedRows}
           getRowKey={(order) => order.id}
           caption={`Sample orders: ${rows.length} matching.`}
@@ -232,6 +270,8 @@ export default function OrdersPage() {
             total={rows.length}
             onPage={goToPage}
             itemLabel="orders"
+            pageSizeOptions={[10, 20, 50]}
+            onPageSizeChange={updatePageSize}
           />
         ) : null}
       </Card>

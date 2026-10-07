@@ -342,4 +342,89 @@ describe("orders page", () => {
     expect(screen.getAllByText("Linh Tran").length).toBeGreaterThan(1);
     expect(screen.getByText(/shipping address/i)).toBeInTheDocument();
   });
+
+  it("writes a status tab change back into the URL", async () => {
+    const replace = vi.fn();
+    vi.mocked(useRouter).mockReturnValue({
+      replace,
+      push: vi.fn(),
+      prefetch: vi.fn().mockResolvedValue(undefined),
+      back: vi.fn(),
+      refresh: vi.fn(),
+      forward: vi.fn(),
+    } as never);
+
+    renderWithProviders(<OrdersPage />, { session: sessionFixture });
+
+    await userEvent.click(screen.getByRole("radio", { name: "Completed" }));
+
+    expect(replace).toHaveBeenCalled();
+    const [url] = replace.mock.calls.at(-1) as [string];
+    expect(url).toContain("status=completed");
+  });
+
+  it("removes the search chip and clears the query", async () => {
+    vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams("search=ord") as never);
+    const replace = vi.fn();
+    vi.mocked(useRouter).mockReturnValue({
+      replace,
+      push: vi.fn(),
+      prefetch: vi.fn().mockResolvedValue(undefined),
+      back: vi.fn(),
+      refresh: vi.fn(),
+      forward: vi.fn(),
+    } as never);
+
+    renderWithProviders(<OrdersPage />, { session: sessionFixture });
+
+    expect(
+      screen.getByRole("button", { name: "Remove Search filter: ord" }),
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Remove Search filter: ord" }));
+
+    expect(replace).toHaveBeenCalled();
+    const [url] = replace.mock.calls.at(-1) as [string];
+    expect(url).not.toContain("search");
+  });
+
+  it("toggles the sort direction on a sortable column", async () => {
+    renderWithProviders(<OrdersPage />, { session: sessionFixture });
+
+    const total = screen.getByRole("columnheader", { name: /total/i });
+    expect(total).toHaveAttribute("aria-sort", "none");
+
+    await userEvent.click(screen.getByRole("button", { name: "Sort by Total" }));
+    expect(screen.getByRole("columnheader", { name: /total/i })).toHaveAttribute(
+      "aria-sort",
+      "ascending",
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Sort by Total" }));
+    expect(screen.getByRole("columnheader", { name: /total/i })).toHaveAttribute(
+      "aria-sort",
+      "descending",
+    );
+  });
+
+  it("writes a page-size change back into the URL and resets to page one", async () => {
+    const replace = vi.fn();
+    vi.mocked(useRouter).mockReturnValue({
+      replace,
+      push: vi.fn(),
+      prefetch: vi.fn().mockResolvedValue(undefined),
+      back: vi.fn(),
+      refresh: vi.fn(),
+      forward: vi.fn(),
+    } as never);
+
+    renderWithProviders(<OrdersPage />, { session: sessionFixture });
+
+    await userEvent.selectOptions(screen.getByLabelText(/rows per page/i), "10");
+
+    expect(replace).toHaveBeenCalled();
+    const [url] = replace.mock.calls.at(-1) as [string];
+    expect(url).toContain("pageSize=10");
+    expect(url).toContain("page=1");
+  });
 });
