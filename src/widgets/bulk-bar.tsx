@@ -10,7 +10,7 @@ export interface BulkBarAction {
   confirm?: { title: string; body: string; confirmLabel: string };
 }
 
-interface BulkBarProps {
+export interface BulkBarProps {
   countLabel: string;
   actions: BulkBarAction[];
   onAction: (id: string) => void;

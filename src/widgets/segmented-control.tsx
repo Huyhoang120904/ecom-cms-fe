@@ -3,7 +3,7 @@ export interface SegmentedOption<T extends string> {
   label: string;
 }
 
-interface SegmentedControlProps<T extends string> {
+export interface SegmentedControlProps<T extends string> {
   label: string;
   name: string;
   options: SegmentedOption<T>[];

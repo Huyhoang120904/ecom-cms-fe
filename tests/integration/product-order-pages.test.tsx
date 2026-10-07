@@ -277,6 +277,7 @@ describe("products page", () => {
 
     await screen.findByText(/published 1 of 2/i);
     expect(screen.getByRole("alert")).toHaveTextContent(/second lamp/i);
+    expect(screen.getByRole("status")).toHaveTextContent("1 product selected");
 
     await user.click(screen.getByRole("button", { name: /retry failed/i }));
     await waitFor(() => expect(vi.mocked(publishProduct)).toHaveBeenCalledTimes(3));

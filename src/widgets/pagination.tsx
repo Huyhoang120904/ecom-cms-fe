@@ -1,7 +1,7 @@
 import { Button } from "react-bootstrap";
 import { ChevronLeft, ChevronRight } from "react-feather";
 
-interface PaginationProps {
+export interface PaginationProps {
   page: number;
   pageSize: number;
   total: number;
@@ -25,8 +25,8 @@ function pageNumbers(page: number, pageCount: number): (number | "…")[] {
   if (pageCount <= 7) {
     return Array.from({ length: pageCount }, (_, index) => index + 1);
   }
-  const window = [page - 1, page, page + 1].filter((n) => n > 1 && n < pageCount);
-  const unique = [...new Set([1, ...window, pageCount])].sort((a, b) => a - b);
+  const neighbors = [page - 1, page, page + 1].filter((n) => n > 1 && n < pageCount);
+  const unique = [...new Set([1, ...neighbors, pageCount])].sort((a, b) => a - b);
   const out: (number | "…")[] = [];
   for (const [index, value] of unique.entries()) {
     if (index > 0 && value - unique[index - 1]! > 1) out.push("…");
@@ -63,7 +63,7 @@ export default function Pagination({
         <span className="text-muted small" style={{ fontVariantNumeric: "tabular-nums" }}>
           Page {safePage} of {pageCount}
         </span>
-        {onPageSizeChange && pageSizeOptions ? (
+        {onPageSizeChange && pageSizeOptions?.length ? (
           <label className="pager-perpage text-muted small">
             Rows per page{" "}
             <select

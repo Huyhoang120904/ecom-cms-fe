@@ -99,12 +99,8 @@ function getInitials(name?: string): string {
 
 /** Column definitions for the sample order list. */
 export function orderColumns({
-  sort,
-  onSort,
   onView,
 }: {
-  sort: OrderSort;
-  onSort: (column: OrderSortKey) => void;
   onView: (order: MockOrder) => void;
 }): DataTableColumn<MockOrder>[] {
   return [

@@ -93,6 +93,7 @@ export default function ProductsPage() {
     const results = await bulk.mutateAsync({ ids, action });
     const failures = results.filter((result) => !result.ok);
     if (failures.length === 0) setSelected([]);
+    else setSelected(failures.map((failure) => failure.id));
     setBulkReport({
       action,
       succeeded: results.length - failures.length,

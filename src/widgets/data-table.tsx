@@ -213,7 +213,7 @@ export default function DataTable<Row>({
   );
 
   if (isLoading) {
-    if (isLoading && cards) {
+    if (cards) {
       return (
         <div className="data-card-list">
           {Array.from({ length: loadingRows }, (_, index) => (
@@ -258,7 +258,7 @@ export default function DataTable<Row>({
         {rows.map((row) => {
           const key = getRowKey(row);
           return (
-            <li key={key} className="shopee-card data-card" data-selected={selected.has(key) ? "true" : undefined}>
+            <li key={key} className="shopee-card data-card" data-selected={selectable && selected.has(key) ? "true" : undefined}>
               {selectable ? (
                 <div className="data-card-check">
                   <input
@@ -294,7 +294,7 @@ export default function DataTable<Row>({
       {head}
       <tbody>
         {rows.map((row) => (
-          <tr key={getRowKey(row)} data-selected={selected.has(getRowKey(row)) ? "true" : undefined}>
+          <tr key={getRowKey(row)} data-selected={selectable && selected.has(getRowKey(row)) ? "true" : undefined}>
             {selectable ? (
               <td className="data-table-check">
                 <input

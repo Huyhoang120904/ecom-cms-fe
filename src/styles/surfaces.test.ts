@@ -19,4 +19,8 @@ describe("list surface styles", () => {
     expect(scss).toContain('tr[data-selected="true"]');
     expect(scss).toContain("var(--shopee-primary-soft)");
   });
+
+  it("tints selected cards from the primary token", () => {
+    expect(scss).toContain(".data-card[data-selected");
+  });
 });

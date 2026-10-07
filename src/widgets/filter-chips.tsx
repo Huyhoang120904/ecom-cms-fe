@@ -6,7 +6,7 @@ export interface FilterChip {
   value: string;
 }
 
-interface FilterChipsProps {
+export interface FilterChipsProps {
   chips: FilterChip[];
   onRemove: (id: string) => void;
   onClearAll: () => void;

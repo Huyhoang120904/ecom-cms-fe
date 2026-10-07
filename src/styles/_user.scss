@@ -934,6 +934,11 @@
   background-color: var(--shopee-primary-soft);
 }
 
+.data-card[data-selected="true"] {
+  border-color: var(--shopee-primary-border);
+  background-color: var(--shopee-primary-soft);
+}
+
 .data-table tbody > tr:focus-within {
   outline: 2px solid var(--shopee-primary);
   outline-offset: -2px;

@@ -259,7 +259,7 @@ export default function OrdersPage() {
         </div>
 
         <DataTable
-          columns={orderColumns({ sort, onSort: toggleSort, onView: setSelectedOrder })}
+          columns={orderColumns({ onView: setSelectedOrder })}
           sort={{ key: sort.key, direction: sort.direction }}
           onSortChange={(key) => toggleSort(key as OrderSortKey)}
           rows={pagedRows}

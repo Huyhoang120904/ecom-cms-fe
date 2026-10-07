@@ -49,4 +49,19 @@ describe("pagination numbers and page size", () => {
     rerender(<Pagination page={1} pageSize={20} total={60} onPage={vi.fn()} />);
     expect(screen.queryByLabelText(/rows per page/i)).not.toBeInTheDocument();
   });
+
+  it("renders no per-page select for an empty options list", () => {
+    render(
+      <Pagination
+        page={1}
+        pageSize={20}
+        total={60}
+        onPage={vi.fn()}
+        pageSizeOptions={[]}
+        onPageSizeChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByLabelText(/rows per page/i)).not.toBeInTheDocument();
+  });
 });
