@@ -251,6 +251,10 @@ export default function OrdersPage() {
             <option value="placedAt-asc">Oldest first</option>
             <option value="total-desc">Total: high to low</option>
             <option value="total-asc">Total: low to high</option>
+            <option value="reference-asc">Order: A to Z</option>
+            <option value="reference-desc">Order: Z to A</option>
+            <option value="customer-asc">Customer: A to Z</option>
+            <option value="customer-desc">Customer: Z to A</option>
           </select>
         </div>
 

@@ -427,4 +427,15 @@ describe("orders page", () => {
     expect(url).toContain("pageSize=10");
     expect(url).toContain("page=1");
   });
+
+  it("sorts by customer from the mobile sort select", async () => {
+    renderWithProviders(<OrdersPage />, { session: sessionFixture });
+
+    await userEvent.selectOptions(screen.getByLabelText(/sort orders/i), "customer-asc");
+
+    expect(screen.getByRole("columnheader", { name: /customer/i })).toHaveAttribute(
+      "aria-sort",
+      "ascending",
+    );
+  });
 });
