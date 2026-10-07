@@ -140,6 +140,49 @@ export function useUnpublishProductMutation(productId: string) {
   return useStatusMutation(productId, unpublishProduct, "inactive");
 }
 
+export type BulkStatusAction = "publish" | "unpublish";
+
+export interface BulkStatusResult {
+  id: string;
+  ok: boolean;
+  message?: string;
+}
+
+/**
+ * Publish or unpublish many products at once.
+ *
+ * One settled result per id, in input order: a refusal for one row never cancels the
+ * rest, and the caller decides what the summary says. The list is invalidated once,
+ * after every request settles, because per-row optimistic writes would fight each other.
+ */
+export function useBulkProductStatusMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      ids,
+      action,
+    }: {
+      ids: string[];
+      action: BulkStatusAction;
+    }): Promise<BulkStatusResult[]> => {
+      const run = action === "publish" ? publishProduct : unpublishProduct;
+      const settled = await Promise.allSettled(ids.map((id) => run(id)));
+      return settled.map((result, index) => {
+        const id = ids[index] ?? "";
+        if (result.status === "fulfilled") return { id, ok: true };
+        const message =
+          result.reason instanceof Error
+            ? result.reason.message
+            : "The product could not be updated.";
+        return { id, ok: false, message };
+      });
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: productsKeys.all });
+    },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Variants
 // ---------------------------------------------------------------------------
