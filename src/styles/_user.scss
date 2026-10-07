@@ -738,3 +738,51 @@
     animation: none;
   }
 }
+
+.segmented-control {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--shopee-border);
+  border-radius: var(--shopee-radius);
+  background-color: var(--shopee-surface);
+}
+
+.segmented-option {
+  margin-bottom: 0;
+
+  > span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    border-radius: calc(var(--shopee-radius) - 2px);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--shopee-muted-text);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  input:checked + span {
+    background-color: var(--shopee-primary);
+    color: var(--shopee-surface);
+  }
+
+  input:not(:checked) + span:hover {
+    background-color: var(--shopee-primary-soft);
+    color: var(--shopee-primary);
+  }
+
+  input:focus-visible + span {
+    outline: 2px solid var(--shopee-primary);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segmented-option > span {
+    transition: none;
+  }
+}
