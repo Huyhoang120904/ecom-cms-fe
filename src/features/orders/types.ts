@@ -10,6 +10,9 @@
 export interface OrderListItem {
   id: string;
   reference?: string;
+  customer?: string;
+  itemsCount?: number;
+  total?: number | string;
   status?: string;
   placedAt?: string;
 }

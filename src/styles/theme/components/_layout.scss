@@ -45,24 +45,20 @@
 
   #page-content {
     min-height: 100vh;
-    min-width: 100vw;
-    margin-left: 15.625rem;
-    -webkit-transition: margin 0.25s ease-out;
-    -moz-transition: margin 0.25s ease-out;
-    -o-transition: margin 0.25s ease-out;
-    transition: margin 0.25s ease-out;
+    min-width: 0;
+    width: 100%;
+    margin-left: 250px;
+    transition: margin-left 0.25s ease-out;
   }
 
 
 
 
-  // Dashboard navbar vertical toggled
+  // Dashboard navbar vertical toggled (legacy — kept for backward compat)
 
   #db-wrapper.toggled .navbar-vertical {
-    margin-left: 0;
+    margin-left: -16rem;
   }
-
-
 
   // Dashboard page content toggled
 
@@ -107,9 +103,6 @@
     #page-content {
       min-width: 0rem;
       width: 100%;
-    }
-    #db-wrapper.toggled .navbar-vertical {
-      margin-left: -16rem;
     }
   }
 

@@ -1,5 +1,7 @@
+"use client";
+
 import { useState } from "react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { Alert, Button, Card, Col, Form, Row } from "react-bootstrap";
 
 import { ApiError } from "lib/api/client";
@@ -276,7 +278,7 @@ export default function ShopSettingsForm() {
               onDeleted={() => {
                 // The session was scoped to this shop, so it is no longer usable.
                 clearSession();
-                void router.replace("/login");
+                router.replace("/login");
               }}
             />
           </Card.Body>

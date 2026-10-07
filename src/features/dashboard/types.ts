@@ -1,15 +1,26 @@
 /**
  * Domain types for the dashboard module.
  *
- * These derive from the generated OpenAPI contract, so a backend change to the
- * health schemas surfaces here as a type error instead of a silent drift.
+ * Hand-written from the backend's health schemas (`ecom-be` `app/schemas/common`), so
+ * this module no longer depends on a generated OpenAPI contract.
  */
 
-import type { components } from "lib/api/generated";
+/** Mirrors `LivenessResponse`: `GET /health/live` answers only when the process runs. */
+export interface LivenessReadModel {
+  status: "ok";
+  service: string;
+}
 
-export type LivenessReadModel = components["schemas"]["LivenessResponse"];
-
-export type ReadinessReadModel = components["schemas"]["ReadinessResponse"];
+/**
+ * Mirrors `ReadinessResponse`: `GET /health/ready` reports each dependency.
+ *
+ * A dependency key is not a fixed list — it is whatever the backend checks — so the
+ * index signature stays open and the panel prints what it is given.
+ */
+export interface ReadinessReadModel {
+  status: "ok" | "not_ready";
+  dependencies: Record<string, "ok" | "unavailable">;
+}
 
 export type ReadinessStatus = ReadinessReadModel["status"];
 

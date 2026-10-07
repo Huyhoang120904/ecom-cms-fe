@@ -75,10 +75,10 @@ export function AccountMenu({ onSwitchShop }: AccountMenuProps) {
     return null;
   }
 
-  const { user, active_shop: activeShop, memberships, permissions } = session;
+  const { user, active_shop: activeShop, memberships, permissions, is_platform_admin: isPlatformAdmin } = session;
 
   return (
-    <Dropdown align="end">
+    <Dropdown align="end" className="account-menu">
       <Dropdown.Toggle
         variant="link"
         id="account-menu"
@@ -87,9 +87,11 @@ export function AccountMenu({ onSwitchShop }: AccountMenuProps) {
         <Avatar user={user} size={32} />
         <span className="d-none d-lg-inline text-start">
           <span className="d-block small fw-medium">{user.full_name}</span>
-          <span className="d-block text-muted" style={{ fontSize: "0.75rem" }}>
-            {activeShop.name}
-          </span>
+          {activeShop ? (
+            <span className="d-block text-muted" style={{ fontSize: "0.75rem" }}>
+              {activeShop.name}
+            </span>
+          ) : null}
         </span>
       </Dropdown.Toggle>
 
@@ -97,27 +99,38 @@ export function AccountMenu({ onSwitchShop }: AccountMenuProps) {
         <Dropdown.ItemText className="px-3 py-2">
           <span className="d-block fw-medium">{user.full_name}</span>
           <span className="d-block text-muted small">{user.email}</span>
+          {isPlatformAdmin ? (
+            <span className="badge-status badge-status-secondary mt-1">
+              <span className="badge-dot bg-dark" />
+              Platform administrator
+            </span>
+          ) : null}
         </Dropdown.ItemText>
 
-        <ShopSwitcher
-          memberships={memberships}
-          activeShopId={activeShop.id}
-          onSwitchShop={onSwitchShop ?? (() => {})}
-          isPending={false}
-        />
-
-        <Dropdown.Divider />
-
-        <Dropdown.Item href="/profile">Profile</Dropdown.Item>
-        {can("shop:update") ? (
-          <Dropdown.Item href="/shop">Shop settings</Dropdown.Item>
+        {activeShop ? (
+          <ShopSwitcher
+            memberships={memberships}
+            activeShopId={activeShop.id}
+            onSwitchShop={onSwitchShop ?? (() => {})}
+            isPending={false}
+          />
         ) : null}
 
         <Dropdown.Divider />
 
-        <Dropdown.ItemText className="px-3 py-2 text-muted small">
-          {permissions.length} permissions on {activeShop.name}
-        </Dropdown.ItemText>
+        <Dropdown.Item href="/profile">Profile</Dropdown.Item>
+        {activeShop && can("shop:update") ? (
+          <Dropdown.Item href="/shop">Shop settings</Dropdown.Item>
+        ) : null}
+
+        {activeShop ? (
+          <>
+            <Dropdown.Divider />
+            <Dropdown.ItemText className="px-3 py-2 text-muted small">
+              {permissions.length} permissions on {activeShop.name}
+            </Dropdown.ItemText>
+          </>
+        ) : null}
       </Dropdown.Menu>
     </Dropdown>
   );

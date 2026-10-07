@@ -13,8 +13,14 @@
 // Font Awesome
 @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.css");
 
-// Feathers CSS for Before Icon
-@import url("/fonts/feather-icons/feather.css");
+// The DashUI template imported its Feather icon-font sheet from /public here. This app does
+// not use that font: every icon is a `react-feather` SVG component, and `grep` finds no
+// `.fe`/`fe feather-*` usage anywhere in `src`. The import is dropped rather than moved
+// because it would otherwise be a font request per page for glyphs nothing renders — and
+// it also cannot stay as written: Turbopack resolves an SCSS `@import url("/...")` as a
+// module lookup and fails the build. The public sheet and its glyph SVGs
+// (`/fonts/feather-icons/`) remain in place; link that file from `app/layout.tsx` if the
+// `fe` classes are ever used.
 
 // Bootstrap functions
 @import "~bootstrap/scss/functions";

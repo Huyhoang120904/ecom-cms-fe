@@ -1,5 +1,7 @@
+"use client";
+
 import { useState } from "react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { Alert, Button, Card, Col, Form, Row } from "react-bootstrap";
 
 import { ApiError } from "lib/api/client";
@@ -235,7 +237,7 @@ export default function ProfileForm() {
             </dl>
 
             <h3 className="h6 fw-bold mb-2">Leave</h3>
-            <DeactivateDialog onDeactivated={() => void router.replace("/login")} />
+            <DeactivateDialog onDeactivated={() => router.replace("/login")} />
           </Card.Body>
         </Card>
       </Col>

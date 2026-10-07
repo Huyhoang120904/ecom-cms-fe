@@ -8,6 +8,8 @@
  * a component.
  */
 
+import type { ZodType } from "zod";
+
 import { ApiError } from "lib/api/client";
 
 export interface BaseResponse<T> {
@@ -38,4 +40,27 @@ export function unwrapEnvelope(body: unknown): unknown {
     );
   }
   return body.data;
+}
+
+/**
+ * Unwrap an enveloped body and assert the documented shape of its payload.
+ *
+ * This is the runtime half of the module-owned wire types: the compiler cannot check a
+ * hand-written interface against what the server sent, so a response that drives a form
+ * or a decision is parsed here. A moved or renamed field becomes an `ApiError` with code
+ * `invalid_response` — the same code a missing envelope raises — and the message names
+ * the offending paths, which is what makes the failure actionable instead of an
+ * `undefined` rendered three components down.
+ */
+export function parseEnvelope<T>(schema: ZodType<T>, body: unknown): T {
+  const result = schema.safeParse(unwrapEnvelope(body));
+  if (result.success) {
+    return result.data;
+  }
+  const paths = [...new Set(result.error.issues.map((issue) => issue.path.join(".")))];
+  throw new ApiError(
+    "invalid_response",
+    `The API response did not match the documented shape: ${paths.join(", ") || "unknown field"}`,
+    502,
+  );
 }
