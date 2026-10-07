@@ -7,6 +7,9 @@ interface PaginationProps {
   total: number;
   onPage: (page: number) => void;
   itemLabel?: string;
+  /** Honest page-size options; the select renders only with `onPageSizeChange`. */
+  pageSizeOptions?: number[];
+  onPageSizeChange?: (size: number) => void;
 }
 
 /**
@@ -17,16 +20,33 @@ interface PaginationProps {
  * A stale page is clamped into range, and disabled directions stay visible so the control
  * does not move under the cursor between pages.
  */
+/** Page buttons with an ellipsis for long ranges. Never invents a page. */
+function pageNumbers(page: number, pageCount: number): (number | "…")[] {
+  if (pageCount <= 7) {
+    return Array.from({ length: pageCount }, (_, index) => index + 1);
+  }
+  const window = [page - 1, page, page + 1].filter((n) => n > 1 && n < pageCount);
+  const unique = [...new Set([1, ...window, pageCount])].sort((a, b) => a - b);
+  const out: (number | "…")[] = [];
+  for (const [index, value] of unique.entries()) {
+    if (index > 0 && value - unique[index - 1]! > 1) out.push("…");
+    out.push(value);
+  }
+  return out;
+}
 export default function Pagination({
   page,
   pageSize,
   total,
   onPage,
   itemLabel = "items",
+  pageSizeOptions,
+  onPageSizeChange,
 }: PaginationProps) {
   const size = Math.max(1, pageSize);
   const pageCount = Math.max(1, Math.ceil(total / size));
   const safePage = Math.min(Math.max(page, 1), pageCount);
+  const numbers = pageNumbers(safePage, pageCount);
   const first = total === 0 ? 0 : (safePage - 1) * size + 1;
   const last = Math.min(safePage * size, total);
 
@@ -39,11 +59,27 @@ export default function Pagination({
         Showing {first}–{last} of {total} {itemLabel}
       </span>
 
-      <div className="d-flex align-items-center gap-3">
+      <div className="d-flex flex-wrap align-items-center gap-3">
         <span className="text-muted small" style={{ fontVariantNumeric: "tabular-nums" }}>
           Page {safePage} of {pageCount}
         </span>
-        <div className="d-flex gap-2">
+        {onPageSizeChange && pageSizeOptions ? (
+          <label className="pager-perpage text-muted small">
+            Rows per page{" "}
+            <select
+              className="form-select form-select-sm d-inline-block w-auto"
+              value={pageSize}
+              onChange={(event) => onPageSizeChange(Number(event.target.value))}
+            >
+              {pageSizeOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+        <div className="d-flex flex-wrap align-items-center gap-1">
           <Button
             type="button"
             variant="outline-secondary"
@@ -55,6 +91,26 @@ export default function Pagination({
             <ChevronLeft size={14} className="me-1" aria-hidden="true" />
             Previous
           </Button>
+          {numbers.map((item, index) =>
+            item === "…" ? (
+              <span key={`gap-${index}`} className="text-muted small px-1" aria-hidden="true">
+                …
+              </span>
+            ) : (
+              <Button
+                key={item}
+                type="button"
+                variant={item === safePage ? "primary" : "outline-secondary"}
+                size="sm"
+                disabled={item === safePage}
+                aria-label={`Go to page ${item}`}
+                aria-current={item === safePage ? "page" : undefined}
+                onClick={() => onPage(item)}
+              >
+                {item}
+              </Button>
+            ),
+          )}
           <Button
             type="button"
             variant="outline-secondary"
