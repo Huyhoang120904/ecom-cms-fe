@@ -1,6 +1,8 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { useEffect } from "react";
-import { useRouter } from "next/router";
+import { usePathname, useRouter } from "next/navigation";
 import { Placeholder } from "react-bootstrap";
 
 import { useAuth } from "features/auth/auth-context";
@@ -12,6 +14,10 @@ import { useAuth } from "features/auth/auth-context";
  * from a 404 would turn a typo into a sign-in prompt.
  */
 const PUBLIC_ROUTES = new Set(["/login", "/register", "/404"]);
+
+export function isPublicRoute(pathname: string): boolean {
+  return PUBLIC_ROUTES.has(pathname);
+}
 
 /**
  * Hold the layout until the seller's session is known, then act on it.
@@ -29,39 +35,57 @@ const PUBLIC_ROUTES = new Set(["/login", "/register", "/404"]);
  * This is a convenience, not a security boundary. Every guarded call is authorized
  * by the backend, which is the only place that can enforce anything.
  */
-export default function RouteGuard({ children }: { children: ReactNode }) {
+export function ProtectedRouteGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname() ?? "/";
   const { status } = useAuth();
-
-  const isPublic = PUBLIC_ROUTES.has(router.pathname);
 
   useEffect(() => {
     if (status === "restoring") {
       return;
     }
-    if (status === "signed_out" && !isPublic) {
+    if (status === "signed_out") {
       // `next` lets the sign-in form return the seller to where they were.
-      void router.replace({ pathname: "/login", query: { next: router.asPath } });
-      return;
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }
-    if (status === "signed_in" && isPublic) {
-      void router.replace("/");
-    }
-  }, [status, isPublic, router]);
+  }, [status, pathname, router]);
 
   if (status === "restoring") {
     return <SessionSkeleton />;
   }
 
-  if (status === "signed_out" && !isPublic) {
-    return <SessionSkeleton />;
-  }
-
-  if (status === "signed_in" && isPublic) {
+  if (status === "signed_out") {
     return <SessionSkeleton />;
   }
 
   return <>{children}</>;
+}
+
+export function PublicRouteGuard({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const { status } = useAuth();
+
+  useEffect(() => {
+    if (status === "signed_in") {
+      router.replace("/");
+    }
+  }, [status, router]);
+
+  if (status === "restoring" || status === "signed_in") {
+    return <SessionSkeleton />;
+  }
+
+  return <>{children}</>;
+}
+
+/** Compatibility wrapper retained until the Pages Router tests are migrated. */
+export default function RouteGuard({ children }: { children: ReactNode }) {
+  const pathname = usePathname() ?? "/";
+  return isPublicRoute(pathname) ? (
+    <PublicRouteGuard>{children}</PublicRouteGuard>
+  ) : (
+    <ProtectedRouteGuard>{children}</ProtectedRouteGuard>
+  );
 }
 
 /**

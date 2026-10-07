@@ -22,6 +22,10 @@ export function jsonResponse(status: number, body: unknown): Response {
 }
 
 export const meBody: MePayload = {
+  // The seller perimeter. A `storefront` or `admin` value here is a session the CMS cannot
+  // use, which is what the shell's notice covers.
+  audience: "cms",
+  is_platform_admin: false,
   user: {
     id: "11111111-1111-4111-8111-111111111111",
     email: "seller@example.com",
@@ -85,11 +89,12 @@ export function renderWithProviders(node: ReactNode, options: RenderOptions = {}
   clearSession();
 
   if (options.withAuthProvider) {
-    return render(
+    const view = render(
       <QueryClientProvider client={client}>
         <AuthProvider>{node}</AuthProvider>
       </QueryClientProvider>,
     );
+    return { ...view, queryClient: client };
   }
 
   // Inject the session without a network round-trip: seed the cache key the
@@ -102,7 +107,7 @@ export function renderWithProviders(node: ReactNode, options: RenderOptions = {}
     setAccessToken(null);
   }
 
-  return render(
+  const view = render(
     <QueryClientProvider client={client}>
       <AuthTestProvider
         value={{
@@ -117,6 +122,8 @@ export function renderWithProviders(node: ReactNode, options: RenderOptions = {}
       </AuthTestProvider>
     </QueryClientProvider>,
   );
+
+  return { ...view, queryClient: client };
 }
 
 /** The real provider's context value, set directly so no refresh is attempted. */

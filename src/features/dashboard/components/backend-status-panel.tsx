@@ -1,3 +1,5 @@
+"use client";
+
 import { Badge, Card, Spinner, Table } from "react-bootstrap";
 
 import { useLivenessQuery, useReadinessQuery } from "features/dashboard/queries";
@@ -21,7 +23,7 @@ export default function BackendStatusPanel() {
   const notReady = readiness.data?.status === "not_ready";
 
   return (
-    <Card className="border-0 shadow-sm h-100">
+    <Card className="shopee-card h-100">
       <Card.Header className="bg-white border-bottom px-4 py-3">
         <div className="d-flex align-items-center justify-content-between">
           <h4 className="mb-0">Backend status</h4>

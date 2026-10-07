@@ -1,4 +1,740 @@
-// 
+//
 // user.scss
 // Use this to write your custom SCSS
 //
+
+// ─── Shopee semantic tokens ───
+//
+// Shared widgets read these custom properties instead of raw hex values, so a
+// palette change lands in one place. Values compile from _user-variables.scss.
+:root {
+  --shopee-primary: #{$primary};
+  --shopee-primary-soft: #{rgba($primary, 0.08)};
+  --shopee-primary-border: #{rgba($primary, 0.15)};
+  --shopee-surface: #{$white};
+  --shopee-background: #{$gray-100};
+  --shopee-border: #{$gray-200};
+  --shopee-text: #{$gray-900};
+  --shopee-muted-text: #{$gray-600};
+  --shopee-danger: #{$danger};
+  --shopee-success: #{$success};
+  --shopee-warning: #{$warning};
+  --shopee-info: #{$info};
+  --shopee-radius: #{$border-radius};
+}
+
+// ─── Shopee Seller Centre skin ───
+//
+// White 224px sidebar, orange active pill, 12px uppercase section labels.
+// Header is white 56px sticky with shop identity left, actions right.
+// Page surface is #F6F6F6, cards white 4px radius, subtle shadow.
+// Touch targets ≥44px, focus rings orange, motion 150-200ms, reduced-motion off.
+
+.navbar-vertical {
+  background-color: $white;
+  border-right: 1px solid $gray-200;
+  width: 100%;
+
+  .navbar-brand-box {
+    border-bottom: 1px solid $gray-200;
+    min-height: 3.5rem;
+  }
+
+  .shopee-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-height: 2.75rem;
+
+    .shopee-brand-mark {
+      width: 2rem;
+      height: 2rem;
+      min-width: 2rem;
+      border-radius: 0.375rem;
+      background-color: $primary; // #D73211: white-on-it 4.6:1, passes AA
+      color: $white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
+    .shopee-brand-name {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+
+      strong {
+        color: $primary;
+        font-size: 0.9375rem;
+        font-weight: 700;
+      }
+
+      span {
+        color: $gray-600;
+        font-size: 0.72rem;
+      }
+    }
+  }
+
+  // Was `$gray-700` on `$gray-800`: a 1.72:1 ratio, effectively invisible.
+  .navbar-heading {
+    color: $gray-600; // 4.89:1
+
+    // Align the label to the same inset as the nav pills below it; the
+    // template's `1rem 1.5rem` padding floats it off to one side of them.
+    margin-left: 0.75rem;
+    margin-right: 0.75rem;
+    padding: 0.875rem 0.75rem 0.375rem;
+  }
+
+  .navbar-nav {
+    .nav-item {
+      .nav-link {
+        // Shopee pill: inset, 14px, 44px min-height, gray idle, orange active.
+        margin-left: 0.625rem;
+        margin-right: 0.625rem;
+        margin-bottom: 0.125rem;
+        padding: 0.625rem 0.75rem;
+        min-height: 2.75rem;
+        border-radius: 0.25rem;
+        color: $gray-800; // #333 on white 12.6:1
+        font-size: 0.875rem;
+        font-weight: 400;
+        line-height: 1.4;
+        border-left: 3px solid transparent;
+        transition: background-color 0.15s ease, color 0.15s ease;
+
+        &:hover {
+          color: $primary; // #D73211 on #FEF1ED ~4.6:1
+          background-color: $light-primary;
+        }
+
+        &:hover .nav-icon {
+          color: $primary;
+          opacity: 1;
+        }
+
+        &:focus-visible {
+          outline: 2px solid $primary;
+          outline-offset: 2px;
+        }
+
+        &.active {
+          color: $primary;
+          background-color: $light-primary;
+          font-weight: 600;
+          border-left-color: $primary;
+          border-top-left-radius: 0;
+          border-bottom-left-radius: 0;
+        }
+
+        &.active .nav-icon {
+          color: $primary;
+          opacity: 1;
+        }
+      }
+
+      .nav-icon {
+        opacity: 0.85;
+        display: inline-flex;
+        transition: color 0.15s ease, opacity 0.15s ease;
+      }
+    }
+  }
+}
+
+// The template sets `all 0.5s` on every nav link, which ignores the design spec's
+// 150-200ms ceiling and its reduced-motion requirement.
+@media (prefers-reduced-motion: reduce) {
+  .navbar-vertical .navbar-nav .nav-item .nav-link,
+  .navbar-vertical .navbar-nav .nav-icon,
+  .sidebar-toggle-btn {
+    transition: none;
+  }
+}
+
+// ─── Sidebar toggle ───
+//
+// The template paints this `$gray-400` and hovers it to `$white`, both invisible
+// on a white surface. Matching source order cannot beat `!important` from an
+// earlier rule, so these carry it too.
+
+.sidebar-toggle-btn {
+  color: $gray-600 !important; // 4.89:1
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: $primary !important;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
+  }
+}
+
+// ─── Sidebar footer ───
+//
+// The account row sits under a hairline top border across the full width; a
+// faint surface tint keeps it reading as a footer rather than loose content.
+// Border and tint are deliberately quiet so the avatar stays the loudest
+// thing in it.
+
+.sidebar-footer {
+  background-color: rgba($gray-100, 0.5);
+
+  // Keyboard users get the same focus ring the nav links and toggle carry.
+  :focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
+  }
+}
+
+// Icon-only mode: a narrower inset keeps the icons centred in the 70px rail.
+.sidebar-collapsed .navbar-vertical .navbar-nav .nav-item .nav-link {
+  margin-left: 0.375rem;
+  margin-right: 0.375rem;
+}
+
+// ─── Status badges & stat cards ───
+
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  line-height: 1;
+
+  .badge-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    min-width: 0.45rem;
+    min-height: 0.45rem;
+  }
+
+  &.badge-status-success {
+    background-color: rgba($success, 0.12);
+    color: darken($success, 12%);
+    border: 1px solid rgba($success, 0.25);
+  }
+
+  &.badge-status-warning {
+    background-color: rgba($warning, 0.14);
+    color: darken($warning, 22%);
+    border: 1px solid rgba($warning, 0.3);
+  }
+
+  &.badge-status-danger {
+    background-color: rgba($danger, 0.1);
+    color: darken($danger, 10%);
+    border: 1px solid rgba($danger, 0.22);
+  }
+
+  &.badge-status-info {
+    background-color: rgba($info, 0.12);
+    color: darken($info, 18%);
+    border: 1px solid rgba($info, 0.25);
+  }
+
+  &.badge-status-secondary {
+    background-color: $gray-100;
+    color: $gray-700;
+    border: 1px solid $gray-300;
+  }
+}
+
+.table-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: $border-radius;
+  color: $gray-600;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+
+  &:hover {
+    color: $primary;
+    background-color: rgba($primary, 0.08);
+    border-color: rgba($primary, 0.15);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
+  }
+}
+
+.product-thumb-placeholder {
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  border-radius: $border-radius;
+  background-color: $gray-100;
+  border: 1px solid $gray-300;
+  color: $gray-500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ─── Authentication surface styling ───
+
+.auth-brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+
+  .brand-icon-chip {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: $border-radius-lg;
+    background-color: rgba($primary, 0.1);
+    color: $primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.auth-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: $white;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-lg;
+  margin-bottom: 1rem;
+  transition: border-color 0.15s ease;
+
+  &:hover {
+    border-color: rgba($primary, 0.4);
+  }
+
+  .feature-icon-chip {
+    width: 2.25rem;
+    height: 2.25rem;
+    min-width: 2.25rem;
+    border-radius: $border-radius;
+    background-color: rgba($primary, 0.08);
+    color: $primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.password-toggle-btn {
+  background: transparent;
+  border: 1px solid $gray-300;
+  border-left: none;
+  color: $gray-500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.875rem;
+  border-top-right-radius: $border-radius;
+  border-bottom-right-radius: $border-radius;
+  transition: color 0.15s ease, background-color 0.15s ease;
+
+  &:hover {
+    color: $primary;
+    background-color: $gray-100;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
+    z-index: 5;
+  }
+}
+
+.auth-submit-btn {
+  height: 2.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.15s ease;
+}
+
+// ─── CMS mockup surfaces ───
+
+.header-account {
+  min-height: 2rem;
+}
+
+.nav-section-label {
+  margin: 1.25rem 0 0.35rem;
+  padding: 0 1.5rem;
+  color: $gray-500;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08rem;
+  text-transform: uppercase;
+}
+
+.mock-data-badge {
+  border: 1px solid $gray-300;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02rem;
+}
+
+.stat-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &.stat-icon-primary {
+    color: $primary;
+    background-color: rgba($primary, 0.1);
+  }
+
+  &.stat-icon-success {
+    color: darken($success, 8%);
+    background-color: rgba($success, 0.1);
+  }
+
+  &.stat-icon-danger {
+    color: darken($danger, 8%);
+    background-color: rgba($danger, 0.1);
+  }
+
+  &.stat-icon-warning {
+    color: darken($warning, 18%);
+    background-color: rgba($warning, 0.14);
+  }
+
+  &.stat-icon-info {
+    color: darken($info, 18%);
+    background-color: rgba($info, 0.12);
+  }
+}
+
+.table-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+
+  &:hover,
+  &:focus-visible {
+    color: $primary;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 3px;
+    border-radius: $border-radius-sm;
+  }
+}
+
+.product-thumb {
+  width: 2.75rem;
+  height: 2.75rem;
+  min-width: 2.75rem;
+  object-fit: cover;
+  border: 1px solid $gray-300;
+  border-radius: $border-radius;
+}
+
+.customer-avatar {
+  width: 2rem;
+  height: 2rem;
+  min-width: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid $gray-300;
+  border-radius: 50%;
+  color: $gray-700;
+  background-color: $gray-100;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.drawer-section {
+  padding: 1.25rem 0;
+  border-top: 1px solid $gray-200;
+}
+
+.detail-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+
+  > div {
+    padding: 0.8rem;
+    border: 1px solid $gray-200;
+    border-radius: $border-radius;
+    background-color: $gray-100;
+  }
+}
+
+.product-detail-image {
+  position: relative;
+  overflow: hidden;
+  min-height: 24rem;
+  border-radius: $border-radius;
+  background-color: $gray-100;
+
+  img {
+    width: 100%;
+    height: 100%;
+    min-height: 24rem;
+    object-fit: cover;
+    opacity: 0.88;
+  }
+}
+
+.product-detail-icon {
+  position: absolute;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  width: 3rem;
+  height: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba($white, 0.75);
+  border-radius: 50%;
+  color: $primary;
+  background-color: rgba($white, 0.85);
+}
+
+.back-link {
+  color: $gray-600;
+  font-size: 0.875rem;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    color: $primary;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .header-account .account-menu {
+    .d-lg-inline {
+      display: none !important;
+    }
+  }
+
+  .nav-section-label {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .detail-stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ─── Shopee Seller Centre surfaces ───
+//
+// Page bg #F6F6F6, cards white 4px, headers 13px semibold, 8px dense grid.
+// Primary buttons orange solid; hover darker; focus ring visible.
+
+#page-content {
+  background-color: $gray-100;
+}
+
+.shopee-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  background-color: $white;
+  border-bottom: 1px solid $gray-200;
+  min-height: 3.5rem;
+
+  .shopee-search {
+    max-width: 26rem;
+    width: 100%;
+
+    .form-control {
+      background-color: $gray-100;
+      border-color: $gray-200;
+
+      &::placeholder {
+        color: $gray-500;
+      }
+
+      &:focus {
+        background-color: $white;
+        border-color: $primary;
+        box-shadow: 0 0 0 0.2rem rgba($primary, 0.12);
+      }
+    }
+  }
+
+  .shopee-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    color: $gray-700;
+    background: transparent;
+    border: 1px solid transparent;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      color: $primary;
+      background-color: $light-primary;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 2px;
+    }
+  }
+}
+
+.shopee-page {
+  background-color: $gray-100;
+}
+
+.shopee-card {
+  border: 1px solid $gray-200 !important;
+  border-radius: 0.25rem !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+
+  .card-header {
+    background-color: $white !important;
+    border-bottom: 1px solid $gray-200 !important;
+    padding: 0.75rem 1rem !important;
+
+    h2, h4, h5, h6 {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: $gray-900;
+      margin-bottom: 0;
+    }
+  }
+}
+
+.shopee-todo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+
+  @media (max-width: 991.98px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.shopee-todo-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.75rem;
+  min-height: 4.75rem;
+  border-radius: 0.25rem;
+  border: 1px solid transparent;
+  text-decoration: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+
+  &:hover {
+    border-color: rgba($primary, 0.35);
+    background-color: $light-primary;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
+  }
+
+  .todo-count {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: $gray-900;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .todo-label {
+    font-size: 0.75rem;
+    color: $gray-600;
+    line-height: 1.4;
+  }
+}
+
+.btn-primary {
+  --bs-btn-bg: #d73211;
+  --bs-btn-border-color: #d73211;
+  --bs-btn-hover-bg: #b7290e;
+  --bs-btn-hover-border-color: #b7290e;
+  --bs-btn-active-bg: #a3240c;
+  --bs-btn-active-border-color: #a3240c;
+  --bs-btn-disabled-bg: #e9a48f;
+  --bs-btn-disabled-border-color: #e9a48f;
+}
+
+.sidebar-backdrop {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
+  }
+}
+
+.empty-state-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--shopee-primary);
+  background-color: var(--shopee-primary-soft);
+}
+
+.shopee-skeleton {
+  display: block;
+  height: 0.875rem;
+  border-radius: $border-radius-sm;
+  background-color: $gray-200;
+  animation: shopee-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes shopee-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shopee-skeleton {
+    animation: none;
+  }
+}

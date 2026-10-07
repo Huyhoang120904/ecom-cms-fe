@@ -1,8 +1,10 @@
-import { useState } from "react";
-import { useRouter } from "next/router";
-import { Alert, Button, Form } from "react-bootstrap";
+"use client";
 
-import { ApiError } from "lib/api/client";
+import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Alert, Button, Form, InputGroup } from "react-bootstrap";
+import { Eye, EyeOff, Lock, LogIn, Mail } from "react-feather";
+
 import {
   EMAIL_MAX,
   PASSWORD_MAX,
@@ -10,7 +12,8 @@ import {
 } from "lib/auth/constants";
 
 import { useLoginMutation } from "features/auth/mutations";
-import { loginSchema } from "features/auth/schemas";
+import { loginErrorMessage } from "features/auth/error-messages";
+import { loginSchema, toLoginPayload } from "features/auth/schemas";
 
 import AuthLayout from "./auth-layout";
 
@@ -28,10 +31,14 @@ interface FieldErrors {
  */
 export default function LoginForm() {
   const router = useRouter();
+  // Nullable in the generated route types: a static prerender has no query string. An
+  // empty set means "no `next` parameter", which is exactly the default below.
+  const searchParams = useSearchParams() ?? new URLSearchParams();
   const login = useLoginMutation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const submit = (event: React.FormEvent<HTMLFormElement>): void => {
@@ -49,17 +56,18 @@ export default function LoginForm() {
       return;
     }
 
-    login.mutate(parsed.data, {
+    // The payload mapper is what stamps the `cms` audience on the request; sending the form
+    // values directly would let the backend default to a storefront (buyer) session.
+    login.mutate(toLoginPayload(parsed.data), {
       onSuccess: () => {
         // `next` is set by the guard when it redirects from a guarded page.
-        const next = typeof router.query.next === "string" ? router.query.next : "/";
-        void router.replace(next);
+        const next = searchParams.get("next") ?? "/";
+        router.replace(next);
       },
     });
   };
 
-  const formError =
-    login.error instanceof ApiError ? login.error.message : login.error ? "Sign-in failed." : null;
+  const formError = loginErrorMessage(login.error);
 
   return (
     <AuthLayout
@@ -72,7 +80,7 @@ export default function LoginForm() {
       }}
     >
       {formError ? (
-        <Alert variant="danger" role="alert" className="py-2">
+        <Alert variant="danger" role="alert" className="py-2 mb-4">
           {formError}
         </Alert>
       ) : null}
@@ -80,15 +88,22 @@ export default function LoginForm() {
       <Form noValidate onSubmit={submit}>
         <Form.Group className="mb-3" controlId="login-email">
           <Form.Label>Email</Form.Label>
-          <Form.Control
-            type="email"
-            name="email"
-            autoComplete="username"
-            value={email}
-            maxLength={EMAIL_MAX}
-            isInvalid={Boolean(fieldErrors.email)}
-            onChange={(event) => setEmail(event.target.value)}
-          />
+          <InputGroup hasValidation={Boolean(fieldErrors.email)}>
+            <InputGroup.Text className="bg-white border-end-0 text-muted">
+              <Mail size={16} />
+            </InputGroup.Text>
+            <Form.Control
+              type="email"
+              name="email"
+              autoComplete="username"
+              value={email}
+              maxLength={EMAIL_MAX}
+              isInvalid={Boolean(fieldErrors.email)}
+              className="border-start-0 ps-0"
+              placeholder="name@example.com"
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          </InputGroup>
           <Form.Text className="text-muted">
             The address you registered with.
           </Form.Text>
@@ -101,16 +116,32 @@ export default function LoginForm() {
 
         <Form.Group className="mb-4" controlId="login-password">
           <Form.Label>Password</Form.Label>
-          <Form.Control
-            type="password"
-            name="password"
-            autoComplete="current-password"
-            value={password}
-            minLength={PASSWORD_MIN}
-            maxLength={PASSWORD_MAX}
-            isInvalid={Boolean(fieldErrors.password)}
-            onChange={(event) => setPassword(event.target.value)}
-          />
+          <InputGroup hasValidation={Boolean(fieldErrors.password)}>
+            <InputGroup.Text className="bg-white border-end-0 text-muted">
+              <Lock size={16} />
+            </InputGroup.Text>
+            <Form.Control
+              type={showPassword ? "text" : "password"}
+              name="password"
+              autoComplete="current-password"
+              value={password}
+              minLength={PASSWORD_MIN}
+              maxLength={PASSWORD_MAX}
+              isInvalid={Boolean(fieldErrors.password)}
+              className="border-start-0 border-end-0 px-0"
+              placeholder="Enter your password"
+              onChange={(event) => setPassword(event.target.value)}
+            />
+            <button
+              type="button"
+              className="password-toggle-btn"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide characters" : "Show characters"}
+              title={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </InputGroup>
           {fieldErrors.password ? (
             <Form.Control.Feedback type="invalid" className="d-block">
               {fieldErrors.password}
@@ -121,10 +152,25 @@ export default function LoginForm() {
         <Button
           type="submit"
           variant="primary"
+          className="w-100 auth-submit-btn shadow-sm"
           disabled={login.isPending}
           aria-busy={login.isPending}
         >
-          {login.isPending ? "Signing in" : "Sign in"}
+          {login.isPending ? (
+            <>
+              <span
+                className="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              />
+              Signing in
+            </>
+          ) : (
+            <>
+              <LogIn size={16} className="me-1" />
+              Sign in
+            </>
+          )}
         </Button>
       </Form>
     </AuthLayout>

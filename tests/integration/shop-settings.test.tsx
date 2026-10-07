@@ -6,7 +6,7 @@ import ShopSettingsForm from "features/shop/components/shop-settings-form";
 
 import { jsonResponse, renderWithProviders, sessionFixture } from "../helpers";
 
-const SHOP = sessionFixture.active_shop;
+const SHOP = sessionFixture.active_shop!;
 
 function lastBody(fetchMock: ReturnType<typeof vi.fn>): Record<string, unknown> {
   const call = fetchMock.mock.calls.at(-1) as [string, RequestInit] | undefined;

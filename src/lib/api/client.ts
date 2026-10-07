@@ -13,9 +13,6 @@ export const apiBaseUrl: string = (
   process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_URL
 ).replace(/\/+$/, "");
 
-/** Path of the versioned OpenAPI document published by ecom-be. */
-export const openApiPath = "/api/v1/openapi.json";
-
 /** Error raised for a non-2xx API response. */
 export class ApiError extends Error {
   readonly code: string;

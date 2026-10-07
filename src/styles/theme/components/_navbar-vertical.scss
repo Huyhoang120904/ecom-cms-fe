@@ -1,21 +1,23 @@
-// Navbar Vertcial
+// Navbar Vertical
+
+$sidebar-width: 250px;
+$sidebar-collapsed-width: 70px;
 
 .navbar-vertical {
 
-  margin-left: -17rem;
+  margin-left: 0;
   display: block;
   position: fixed;
   top: 0;
   bottom: 0;
   width: 100%;
-  max-width: 250px;
+  max-width: $sidebar-width;
   padding: 0rem;
   background-color: $gray-800;
   border-right: 1px solid $gray-800;
-  -webkit-transition: margin 0.25s ease-out;
-  -moz-transition: margin 0.25s ease-out;
-  -o-transition: margin 0.25s ease-out;
-  transition: margin 0.25s ease-out;
+  transition: max-width 0.25s ease-out;
+  z-index: 1030;
+  overflow: hidden;
 
   .slimScrollDiv {
     height: 100% !important;
@@ -154,8 +156,76 @@
 
 .collapse.in {
     display: block;
+}
 
+// ─── Collapsed sidebar ───
 
+.sidebar-collapsed .navbar-vertical {
+  max-width: $sidebar-collapsed-width;
 
+  .navbar-heading {
+    display: none;
+  }
 
+  .navbar-nav .nav-item .nav-link {
+    justify-content: center;
+    padding: 0.625rem 0;
+  }
+
+  .navbar-brand-box {
+    justify-content: center !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+
+.sidebar-collapsed #page-content {
+  margin-left: $sidebar-collapsed-width;
+}
+
+// ─── Sidebar toggle button ───
+
+.sidebar-toggle-btn {
+  color: $gray-400 !important;
+  line-height: 1;
+
+  &:hover {
+    color: $white !important;
+  }
+}
+
+// ─── Mobile overlay ───
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba($black, 0.5);
+  z-index: 1029;
+}
+
+@media (max-width: 767.98px) {
+  .navbar-vertical {
+    margin-left: -$sidebar-width;
+    max-width: $sidebar-width;
+    transition: margin-left 0.25s ease-out;
+  }
+
+  #page-content {
+    margin-left: 0 !important;
+  }
+
+  .sidebar-mobile-open .navbar-vertical {
+    margin-left: 0;
+  }
+
+  // Collapsed state doesn't apply on mobile
+  .sidebar-collapsed .navbar-vertical {
+    max-width: $sidebar-width;
+    margin-left: -$sidebar-width;
+  }
+
+  .sidebar-collapsed.sidebar-mobile-open .navbar-vertical {
+    margin-left: 0;
+    max-width: $sidebar-width;
+  }
 }

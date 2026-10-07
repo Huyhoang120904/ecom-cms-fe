@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import LoginForm from "features/auth/components/login-form";
 import RegisterForm from "features/auth/components/register-form";
 
-import { jsonResponse, renderWithProviders } from "../helpers";
+import { jsonResponse, renderWithProviders, sessionFixture } from "../helpers";
 
 describe("login form", () => {
   beforeEach(() => {
@@ -18,6 +18,58 @@ describe("login form", () => {
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
     expect(screen.getByText(/the address you registered with/i)).toBeInTheDocument();
+  });
+
+  it("asks for the cms audience, because the backend defaults a login to a buyer session", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse(200, {
+        status_code: 200,
+        message: "Success",
+        data: {
+          access_token: "token-1",
+          token_type: "bearer",
+          expires_in: 900,
+          audience: "cms",
+          user: sessionFixture.user,
+          active_shop: sessionFixture.active_shop,
+          memberships: sessionFixture.memberships,
+          permissions: sessionFixture.permissions,
+        },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    renderWithProviders(<LoginForm />, { session: null });
+
+    await userEvent.type(screen.getByLabelText(/email/i), "seller@example.com");
+    await userEvent.type(screen.getByLabelText(/^password/i), "correct-horse-battery");
+    await userEvent.click(screen.getByRole("button", { name: /^sign in$/i }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("/api/v1/auth/login");
+    // Without this the backend issues a storefront token, and every shop route refuses it
+    // even though the same account owns a shop.
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      email: "seller@example.com",
+      audience: "cms",
+    });
+  });
+
+  it("explains that a cms login with no live shop is not a deactivation", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        jsonResponse(401, { error: "account_inactive", message: "This account is not active" }),
+      ),
+    );
+    renderWithProviders(<LoginForm />, { session: null });
+
+    await userEvent.type(screen.getByLabelText(/email/i), "seller@example.com");
+    await userEvent.type(screen.getByLabelText(/^password/i), "correct-horse-battery");
+    await userEvent.click(screen.getByRole("button", { name: /^sign in$/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/no active shop to sign in to/i);
   });
 
   it("shows the backend's message when the credentials are wrong", async () => {
@@ -109,20 +161,18 @@ describe("login form", () => {
     // The guard redirects with `next`, so signing in must honour it rather than
     // always landing on the dashboard.
     const replace = vi.fn();
-    const { useRouter } = await import("next/router");
+    const { useRouter, useSearchParams } = await import("next/navigation");
     vi.mocked(useRouter).mockReturnValue({
-      pathname: "/login",
-      asPath: "/login?next=%2Fproducts",
-      query: { next: "/products" },
-      route: "/login",
       replace,
       push: vi.fn(),
       prefetch: vi.fn().mockResolvedValue(undefined),
       back: vi.fn(),
-      reload: vi.fn(),
-      isReady: true,
-      events: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
+      refresh: vi.fn(),
+      forward: vi.fn(),
     } as unknown as ReturnType<typeof useRouter>);
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams("next=%2Fproducts") as ReturnType<typeof useSearchParams>,
+    );
 
     vi.stubGlobal(
       "fetch",

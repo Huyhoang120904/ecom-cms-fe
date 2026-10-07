@@ -146,6 +146,13 @@ export function toShopPayload(form: ShopUpdateFormValues): ShopUpdatePayload {
   return payload;
 }
 
+/**
+ * Build the register body.
+ *
+ * `shop_name` is required by this app's form and is what makes the account a seller: the
+ * backend creates a buyer-only account (a `storefront` perimeter) when the field is
+ * omitted, which would leave the seller CMS with a session it cannot use.
+ */
 export function toRegisterPayload(form: RegisterFormValues): RegisterPayload {
   return {
     email: form.email,
@@ -155,8 +162,16 @@ export function toRegisterPayload(form: RegisterFormValues): RegisterPayload {
   };
 }
 
+/**
+ * Build the login body.
+ *
+ * `audience` is required and is always `cms` here: the backend defaults a login to
+ * `storefront` (a buyer), and a storefront token is refused on every shop route even when
+ * the same account owns a shop. Sending it explicitly is what tells the backend to issue a
+ * seller session scoped to a shop.
+ */
 export function toLoginPayload(form: LoginFormValues): LoginPayload {
-  return { email: form.email, password: form.password };
+  return { email: form.email, password: form.password, audience: "cms" };
 }
 
 export function toDeactivatePayload(form: DeactivateFormValues): DeactivatePayload {

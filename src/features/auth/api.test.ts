@@ -14,6 +14,8 @@ import { clearSession, getAccessToken, setAccessToken } from "lib/auth/session";
 const API = "http://localhost:8000";
 
 const ME = {
+  audience: "cms",
+  is_platform_admin: false,
   user: {
     id: "11111111-1111-4111-8111-111111111111",
     email: "seller@example.com",
@@ -29,6 +31,7 @@ const SESSION = {
   access_token: "token-1",
   token_type: "bearer",
   expires_in: 900,
+  audience: "cms",
   user: ME.user,
   active_shop: ME.active_shop,
   memberships: [],
@@ -86,7 +89,11 @@ describe("auth api", () => {
   it("signs in and stores the token", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(envelope(SESSION)));
 
-    await login({ email: "seller@example.com", password: "a-perfectly-fine-password" });
+    await login({
+      email: "seller@example.com",
+      password: "a-perfectly-fine-password",
+      audience: "cms",
+    });
 
     expect(getAccessToken()).toBe("token-1");
   });
@@ -103,7 +110,11 @@ describe("auth api", () => {
     );
 
     await expect(
-      login({ email: "seller@example.com", password: "wrong-password-entirely" }),
+      login({
+        email: "seller@example.com",
+        password: "wrong-password-entirely",
+        audience: "cms",
+      }),
     ).rejects.toMatchObject({ code: "invalid_credentials", status: 401 });
     expect(getAccessToken()).toBeNull();
   });
