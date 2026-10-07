@@ -41,6 +41,10 @@ interface DataTableProps<Row> {
   loadingRows?: number;
   sort?: DataTableSort;
   onSortChange?: (key: string) => void;
+  selectedKeys?: string[];
+  onSelectionChange?: (keys: string[]) => void;
+  /** Accessible row name for the row checkbox. Defaults to the row key. */
+  getRowLabel?: (row: Row) => string;
 }
 
 function cellClass<Row>(column: DataTableColumn<Row>): string {
@@ -76,14 +80,61 @@ export default function DataTable<Row>({
   loadingRows = 5,
   sort,
   onSortChange,
+  selectedKeys,
+  onSelectionChange,
+  getRowLabel,
 }: DataTableProps<Row>) {
   if (errorMessage) {
     return <ErrorState message={errorMessage} onRetry={onRetry} />;
   }
 
+  const selectable = onSelectionChange !== undefined;
+  const selected = new Set(selectedKeys ?? []);
+  const labelOf = getRowLabel ?? getRowKey;
+  const allVisible = rows.length > 0 && rows.every((row) => selected.has(getRowKey(row)));
+  const someVisible = rows.some((row) => selected.has(getRowKey(row)));
+
+  function toggleAll() {
+    if (!onSelectionChange) return;
+    if (allVisible) {
+      const visible = new Set(rows.map((row) => getRowKey(row)));
+      onSelectionChange((selectedKeys ?? []).filter((key) => !visible.has(key)));
+    } else {
+      const next = [...(selectedKeys ?? [])];
+      for (const row of rows) {
+        const key = getRowKey(row);
+        if (!next.includes(key)) next.push(key);
+      }
+      onSelectionChange(next);
+    }
+  }
+
+  function toggleOne(key: string) {
+    if (!onSelectionChange) return;
+    onSelectionChange(
+      selected.has(key)
+        ? (selectedKeys ?? []).filter((current) => current !== key)
+        : [...(selectedKeys ?? []), key],
+    );
+  }
+
   const head = (
     <thead className="table-light">
       <tr>
+          {selectable ? (
+            <th scope="col" className="data-table-check">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                checked={allVisible}
+                ref={(node) => {
+                  if (node) node.indeterminate = !allVisible && someVisible;
+                }}
+                aria-label="Select all rows"
+                onChange={toggleAll}
+              />
+            </th>
+          ) : null}
         {columns.map((column) => {
           const sortable = column.sortable === true && onSortChange !== undefined;
           const key = column.sortKey ?? column.id;
@@ -135,6 +186,7 @@ export default function DataTable<Row>({
         <tbody>
           {Array.from({ length: loadingRows }, (_, index) => (
             <tr key={index} aria-hidden="true">
+              {selectable ? <td className="data-table-check" aria-hidden="true" /> : null}
               {columns.map((column) => (
                 <td key={column.id} className={cellClass(column)}>
                   <span
@@ -160,7 +212,18 @@ export default function DataTable<Row>({
       {head}
       <tbody>
         {rows.map((row) => (
-          <tr key={getRowKey(row)}>
+          <tr key={getRowKey(row)} data-selected={selected.has(getRowKey(row)) ? "true" : undefined}>
+            {selectable ? (
+              <td className="data-table-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={selected.has(getRowKey(row))}
+                  aria-label={`Select row ${labelOf(row)}`}
+                  onChange={() => toggleOne(getRowKey(row))}
+                />
+              </td>
+            ) : null}
             {columns.map((column) => (
               <td key={column.id} className={cellClass(column)}>
                 {column.render(row)}
