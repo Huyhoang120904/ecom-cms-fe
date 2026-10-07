@@ -130,7 +130,7 @@ export default function SegmentedControl<T extends string>({
             onChange={() => onChange(option.value)}
             className="visually-hidden"
           />
-          <span aria-hidden="true">{option.label}</span>
+          <span>{option.label}</span>
         </label>
       ))}
     </div>
@@ -171,7 +171,7 @@ Append to `src/styles/_user.scss`:
 
   input:checked + span {
     background-color: var(--shopee-primary);
-    color: #fff;
+    color: var(--shopee-surface);
   }
 
   input:not(:checked) + span:hover {
@@ -971,7 +971,7 @@ In `src/widgets/data-table.tsx`, make exactly these edits:
 
 2. Destructure `selectedKeys`, `onSelectionChange`, `getRowLabel` in the component signature (no defaults).
 
-3. After the `head` constant, add the selection helpers:
+3. Before the `head` constant, add the selection helpers (the header checkbox reads them, so placing them after `head` would TDZ-error):
 
 ```tsx
   const selectable = onSelectionChange !== undefined;
@@ -2617,5 +2617,11 @@ git push
 
 ## Verification record
 
-(filled during Task 12)
+Executed 2026-10-07 (Task 12).
+
+- Gates: `pnpm run lint` exit 0; `pnpm run typecheck` clean; `pnpm run test` 236/236 (30 files); `pnpm run build` success.
+- Smoke: the running dev server for this directory (port 3000) returned 200 for `/`, `/products`, `/orders`, `/products/new`, `/login`.
+- Authenticated visual pass (sticky header, tabs, chips, bulk bar with partial-failure summary, numbered pagination, per-page sizing, mobile cards, skeletons, reduced motion): parked for the signed-in human; the route guard redirects session-less traffic to `/login`.
+- Reviews: twelve task reviews clean (Task 1 one fix round for the token substitution; Task 11 one fix round for mobile sort options); two brief-level defects caught and corrected during execution (radio accessible names, helper placement order, JSX in `.ts` test).
+- Still open (parked, not fixed): dead `sort`/`onSort` params on `orderColumns` (signature + call site must change together); orders empty-state copy under active filters; minor test-coverage polish; authenticated visual pass.
 
