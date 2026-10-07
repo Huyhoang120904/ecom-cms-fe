@@ -870,3 +870,43 @@
   border-radius: var(--shopee-radius);
   background-color: var(--shopee-surface);
 }
+
+.data-card-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem;
+  list-style: none;
+}
+
+.data-card {
+  padding: 0.75rem 1rem;
+}
+
+.data-card-check {
+  margin-bottom: 0.5rem;
+}
+
+.data-card-field {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.375rem 0;
+}
+
+.data-card-field + .data-card-field {
+  border-top: 1px solid var(--shopee-border);
+}
+
+.data-card-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04rem;
+  color: var(--shopee-muted-text);
+}
+
+.data-card-value {
+  text-align: right;
+  font-size: 0.875rem;
+}

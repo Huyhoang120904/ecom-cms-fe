@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Table } from "react-bootstrap";
 import { ChevronDown, ChevronUp, ChevronsDown } from "react-feather";
@@ -20,6 +21,12 @@ export interface DataTableColumn<Row> {
   /** Accessible label for the sort button. Defaults to the header when it is a string. */
   sortLabel?: string;
   render: (row: Row) => ReactNode;
+  /**
+   * Card-mode mapping under 768px. A column without `mobile` is skipped on
+   * cards; `hide` skips it explicitly; a mapping without `label` renders the
+   * value full-width with no label row (used for the actions column).
+   */
+  mobile?: { label?: string; hide?: boolean };
 }
 
 export type SortDirection = "asc" | "desc";
@@ -45,6 +52,8 @@ interface DataTableProps<Row> {
   onSelectionChange?: (keys: string[]) => void;
   /** Accessible row name for the row checkbox. Defaults to the row key. */
   getRowLabel?: (row: Row) => string;
+  /** `"auto"` follows a 768px media query; explicit values exist so tests can force either rendering. */
+  layout?: "auto" | "table" | "cards";
 }
 
 function cellClass<Row>(column: DataTableColumn<Row>): string {
@@ -59,6 +68,27 @@ function headerCellClass<Row>(column: DataTableColumn<Row>): string {
   if (column.align === "end") parts.push("text-end", "pe-4");
   if (column.className) parts.push(column.className);
   return parts.join(" ");
+}
+
+const MOBILE_QUERY = "(max-width: 767.98px)";
+
+/** Viewport match without a hooks directory: this is the only consumer. */
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() =>
+    typeof window !== "undefined" && typeof window.matchMedia !== "undefined"
+      ? window.matchMedia(query).matches
+      : false,
+  );
+
+  useEffect(() => {
+    const list = window.matchMedia(query);
+    const update = () => setMatches(list.matches);
+    update();
+    list.addEventListener("change", update);
+    return () => list.removeEventListener("change", update);
+  }, [query]);
+
+  return matches;
 }
 
 /**
@@ -83,7 +113,9 @@ export default function DataTable<Row>({
   selectedKeys,
   onSelectionChange,
   getRowLabel,
+  layout = "auto",
 }: DataTableProps<Row>) {
+  const isMobileViewport = useMediaQuery(MOBILE_QUERY);
   if (errorMessage) {
     return <ErrorState message={errorMessage} onRetry={onRetry} />;
   }
@@ -117,6 +149,8 @@ export default function DataTable<Row>({
         : [...(selectedKeys ?? []), key],
     );
   }
+
+  const cards = layout === "cards" || (layout === "auto" && isMobileViewport);
 
   const head = (
     <thead className="table-light">
@@ -179,6 +213,18 @@ export default function DataTable<Row>({
   );
 
   if (isLoading) {
+    if (isLoading && cards) {
+      return (
+        <div className="data-card-list">
+          {Array.from({ length: loadingRows }, (_, index) => (
+            <div key={index} aria-hidden="true" className="shopee-card data-card">
+              <span className="shopee-skeleton" style={{ width: 140 }} />
+              <span className="shopee-skeleton" style={{ width: 96 }} />
+            </div>
+          ))}
+        </div>
+      );
+    }
     return (
       <Table responsive className="align-middle mb-0 text-nowrap">
         {caption ? <caption className="px-4 text-muted small">{caption}</caption> : null}
@@ -204,6 +250,42 @@ export default function DataTable<Row>({
 
   if (rows.length === 0) {
     return <>{emptyState ?? null}</>;
+  }
+
+  if (cards) {
+    return (
+      <ul className="data-card-list">
+        {rows.map((row) => {
+          const key = getRowKey(row);
+          return (
+            <li key={key} className="shopee-card data-card" data-selected={selected.has(key) ? "true" : undefined}>
+              {selectable ? (
+                <div className="data-card-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    checked={selected.has(key)}
+                    aria-label={`Select row ${labelOf(row)}`}
+                    onChange={() => toggleOne(key)}
+                  />
+                </div>
+              ) : null}
+              {columns.map((column) => {
+                if (!column.mobile || column.mobile.hide) return null;
+                return (
+                  <div key={column.id} className="data-card-field">
+                    {column.mobile.label ? (
+                      <span className="data-card-label">{column.mobile.label}</span>
+                    ) : null}
+                    <span className="data-card-value">{column.render(row)}</span>
+                  </div>
+                );
+              })}
+            </li>
+          );
+        })}
+      </ul>
+    );
   }
 
   return (
