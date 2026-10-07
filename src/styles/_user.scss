@@ -916,3 +916,25 @@
   align-items: center;
   gap: 0.5rem;
 }
+
+@media (min-width: 768px) {
+  .data-table thead th {
+    position: sticky;
+    top: 3.5rem;
+    z-index: 10;
+    background-color: $gray-100;
+  }
+}
+
+.data-table tbody > tr:hover > * {
+  background-color: var(--shopee-primary-soft);
+}
+
+.data-table tbody > tr[data-selected="true"] > * {
+  background-color: var(--shopee-primary-soft);
+}
+
+.data-table tbody > tr:focus-within {
+  outline: 2px solid var(--shopee-primary);
+  outline-offset: -2px;
+}

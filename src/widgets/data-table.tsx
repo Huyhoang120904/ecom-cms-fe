@@ -226,7 +226,7 @@ export default function DataTable<Row>({
       );
     }
     return (
-      <Table responsive className="align-middle mb-0 text-nowrap">
+      <Table responsive className="data-table align-middle mb-0 text-nowrap">
         {caption ? <caption className="px-4 text-muted small">{caption}</caption> : null}
         {head}
         <tbody>
@@ -289,7 +289,7 @@ export default function DataTable<Row>({
   }
 
   return (
-    <Table responsive className="align-middle mb-0 text-nowrap">
+    <Table responsive className="data-table align-middle mb-0 text-nowrap">
       {caption ? <caption className="px-4 text-muted small">{caption}</caption> : null}
       {head}
       <tbody>
