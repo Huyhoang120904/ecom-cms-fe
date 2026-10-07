@@ -85,6 +85,7 @@ export function productColumns({
       header: "Product",
       width: "34%",
       skeletonWidth: 160,
+      mobile: { label: "Product" },
       render: (product) => (
         <>
           <Link
@@ -101,6 +102,7 @@ export function productColumns({
       id: "category",
       header: "Category",
       skeletonWidth: 80,
+      mobile: { label: "Category" },
       render: (product) => (
         <span className="text-secondary small">{categoryNames.get(product.category_id) ?? "—"}</span>
       ),
@@ -109,6 +111,7 @@ export function productColumns({
       id: "brand",
       header: "Brand",
       skeletonWidth: 64,
+      mobile: { hide: true },
       render: (product) => (
         <span className="text-secondary small">
           {product.brand_id ? (brandNames.get(product.brand_id) ?? "—") : "—"}
@@ -119,12 +122,14 @@ export function productColumns({
       id: "status",
       header: "Status",
       skeletonWidth: 72,
+      mobile: { label: "Status" },
       render: (product) => <ProductStatusBadge status={product.status} />,
     },
     {
       id: "updated",
       header: "Updated",
       skeletonWidth: 84,
+      mobile: { label: "Updated" },
       render: (product) => <span className="text-muted small">{formatDate(product.updated_at)}</span>,
     },
     {
@@ -132,6 +137,7 @@ export function productColumns({
       header: "Actions",
       align: "end",
       skeletonWidth: 60,
+      mobile: {},
       render: (product) => (
         <div className="d-inline-flex gap-1">
           <Link

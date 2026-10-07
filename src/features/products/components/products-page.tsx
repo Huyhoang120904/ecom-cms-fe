@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Card, Col, Form, Row } from "react-bootstrap";
-import { Plus } from "react-feather";
+import { useEffect, useState } from "react";
+import { Button, Card, Col, Row } from "react-bootstrap";
+import { Check, EyeOff, Plus } from "react-feather";
 
+import BulkBar from "widgets/bulk-bar";
 import DataTable from "widgets/data-table";
 import FilterBar from "widgets/filter-bar";
 import PageShell from "widgets/page-shell";
 import Pagination from "widgets/pagination";
+import SegmentedControl from "widgets/segmented-control";
 import StatCard from "widgets/stat-card";
 
 import { ApiError } from "lib/api/client";
@@ -18,6 +21,7 @@ import { categoryNameMap, useBrandsQuery, useCategoryTreeQuery } from "features/
 import { ProductsEmptyState, productColumns } from "features/products/components/products-table";
 import { PRODUCT_STATUSES } from "features/products/constants";
 import { productStatusLabel } from "features/products/mapping";
+import { useBulkProductStatusMutation, type BulkStatusAction } from "features/products/mutations";
 import { parseProductFilters } from "features/products/schemas";
 import { useProductsQuery } from "features/products/queries";
 
@@ -65,6 +69,41 @@ export default function ProductsPage() {
     updateQuery({ page: String(pageNumber) });
   }
 
+  const listKey = `${filters.status ?? ""}|${filters.page}|${filters.pageSize}`;
+  const [selected, setSelected] = useState<string[]>([]);
+  const [bulkReport, setBulkReport] = useState<{
+    action: BulkStatusAction;
+    succeeded: number;
+    failures: { id: string; name: string; message: string }[];
+  } | null>(null);
+
+  // Resetting transient selection state when the server list identity changes is the
+  // one case for a sync setState in an effect: there is no external system to subscribe to.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- transient selection resets with the list identity
+    setSelected([]);
+    setBulkReport(null);
+  }, [listKey]);
+
+  const bulk = useBulkProductStatusMutation();
+  const names = new Map((page?.items ?? []).map((product) => [product.id, product.name]));
+
+  async function runBulk(action: BulkStatusAction, ids: string[]) {
+    setBulkReport(null);
+    const results = await bulk.mutateAsync({ ids, action });
+    const failures = results.filter((result) => !result.ok);
+    if (failures.length === 0) setSelected([]);
+    setBulkReport({
+      action,
+      succeeded: results.length - failures.length,
+      failures: failures.map((failure) => ({
+        id: failure.id,
+        name: names.get(failure.id) ?? failure.id,
+        message: failure.message ?? "The product could not be updated.",
+      })),
+    });
+  }
+
   const failure = products.error;
   const errorMessage = products.isError
     ? failure instanceof ApiError
@@ -103,29 +142,70 @@ export default function ProductsPage() {
               : undefined
           }
         >
-          <div style={{ minWidth: 220 }}>
-            <Form.Label htmlFor="product-status-filter" className="visually-hidden">
-              Filter by status
-            </Form.Label>
-            <Form.Select
-              id="product-status-filter"
-              value={filters.status ?? ""}
-              onChange={(event) =>
-                updateQuery({ status: event.target.value || undefined, page: "1" })
-              }
-              aria-label="Filter products by status"
-            >
-              <option value="">All statuses</option>
-              {PRODUCT_STATUSES.map((value) => (
-                <option key={value} value={value}>
-                  {productStatusLabel(value)}
-                </option>
-              ))}
-            </Form.Select>
-          </div>
+          <SegmentedControl
+            label="Filter by status"
+            name="product-status"
+            options={[
+              { value: "", label: "All" },
+              ...PRODUCT_STATUSES.map((value) => ({ value, label: productStatusLabel(value) })),
+            ]}
+            value={filters.status ?? ""}
+            onChange={(next) => updateQuery({ status: next || undefined, page: "1" })}
+          />
         </FilterBar>
 
         <Card.Body className="px-0 py-0">
+          {bulkReport && bulkReport.failures.length > 0 ? (
+            <div className="px-4 py-3 border-bottom" role="alert">
+              <p className="mb-1 fw-semibold text-danger">
+                {bulkReport.action === "publish" ? "Published" : "Unpublished"}{" "}
+                {bulkReport.succeeded} of {bulkReport.succeeded + bulkReport.failures.length} —{" "}
+                {bulkReport.failures.length} failed:
+              </p>
+              <ul className="mb-2 small">
+                {bulkReport.failures.map((failure) => (
+                  <li key={failure.id}>
+                    {failure.name} — {failure.message}
+                  </li>
+                ))}
+              </ul>
+              <Button
+                type="button"
+                variant="outline-secondary"
+                size="sm"
+                disabled={bulk.isPending}
+                onClick={() =>
+                  void runBulk(
+                    bulkReport.action,
+                    bulkReport.failures.map((failure) => failure.id),
+                  )
+                }
+              >
+                Retry failed
+              </Button>
+            </div>
+          ) : null}
+          {canWrite && selected.length > 0 ? (
+            <BulkBar
+              countLabel={`${selected.length} ${selected.length === 1 ? "product" : "products"} selected`}
+              actions={[
+                {
+                  id: "publish",
+                  label: "Publish",
+                  icon: <Check size={14} aria-hidden="true" />,
+                  variant: "primary",
+                },
+                {
+                  id: "unpublish",
+                  label: "Unpublish",
+                  icon: <EyeOff size={14} aria-hidden="true" />,
+                },
+              ]}
+              onAction={(id) => void runBulk(id as BulkStatusAction, selected)}
+              onClear={() => setSelected([])}
+              isPending={bulk.isPending}
+            />
+          ) : null}
           <DataTable
             columns={productColumns({ categoryNames, brandNames, canWrite })}
             rows={page?.items ?? []}
@@ -134,6 +214,8 @@ export default function ProductsPage() {
             errorMessage={errorMessage}
             onRetry={() => void products.refetch()}
             emptyState={<ProductsEmptyState canWrite={canWrite} />}
+            selectedKeys={canWrite ? selected : undefined}
+            onSelectionChange={canWrite ? setSelected : undefined}
           />
           {!products.isError && page && page.items.length > 0 ? (
             <Pagination
@@ -142,6 +224,8 @@ export default function ProductsPage() {
               total={page.total}
               onPage={goToPage}
               itemLabel="products"
+              pageSizeOptions={[10, 20, 50]}
+              onPageSizeChange={(size) => updateQuery({ pageSize: String(size), page: "1" })}
             />
           ) : null}
         </Card.Body>

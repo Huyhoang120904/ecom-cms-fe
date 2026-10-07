@@ -9,6 +9,13 @@ import ProductsPage from "features/products/components/products-page";
 import { ProductStatusBadge } from "features/products/components/products-table";
 
 import { jsonResponse, renderWithProviders, sessionFixture } from "../helpers";
+import { publishProduct, unpublishProduct } from "features/products/api";
+
+vi.mock("features/products/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("features/products/api")>()),
+  publishProduct: vi.fn(),
+  unpublishProduct: vi.fn(),
+}));
 
 const PRODUCT_ID = "33333333-3333-4333-8333-333333333333";
 const CATEGORY_ID = "44444444-4444-4444-8444-444444444444";
@@ -37,6 +44,18 @@ const CATEGORY_TREE = [
 
 const EMPTY_PAGE = { items: [], total: 0, page: 1, page_size: 20 };
 const ONE_PAGE = { items: [SUMMARY], total: 1, page: 1, page_size: 20 };
+const SECOND_ID = "55555555-5555-4555-8555-555555555555";
+const SECOND_SUMMARY = {
+  ...SUMMARY,
+  id: SECOND_ID,
+  name: "Second Lamp",
+  status: "active" as const,
+};
+const TWO_PAGE = { items: [SUMMARY, SECOND_SUMMARY], total: 2, page: 1, page_size: 20 };
+const writerSession = {
+  ...sessionFixture,
+  permissions: [...sessionFixture.permissions, "products:write"],
+};
 
 /**
  * Stub the three reads the list page performs: the page itself, plus the category tree and
@@ -101,6 +120,20 @@ describe("product and order status badges", () => {
 describe("products page", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    // The tabs read their checked state from the URL: a `status` left over from a
+    // previous case would leave "Active" already checked, so its click fires no change
+    // and the next case sees no navigation. Reset to an empty query string instead.
+    vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams() as never);
+    vi.mocked(useRouter).mockReturnValue({
+      replace: vi.fn(),
+      push: vi.fn(),
+      prefetch: vi.fn().mockResolvedValue(undefined),
+      back: vi.fn(),
+      refresh: vi.fn(),
+      forward: vi.fn(),
+    } as never);
+    vi.mocked(publishProduct).mockReset();
+    vi.mocked(unpublishProduct).mockReset();
   });
 
   it("renders a row per product and links it to its detail page", async () => {
@@ -142,6 +175,7 @@ describe("products page", () => {
     await waitFor(() => expect(listUrl(fetchMock)).toContain("page=2"));
     expect(listUrl(fetchMock)).toContain("status=active");
     expect(listUrl(fetchMock)).not.toContain("search");
+    expect(await screen.findByRole("radio", { name: "Active" })).toBeChecked();
   });
 
   it("writes a status change back into the URL rather than keeping it in memory", async () => {
@@ -158,10 +192,7 @@ describe("products page", () => {
 
     renderWithProviders(<ProductsPage />, { session: sessionFixture });
 
-    await userEvent.selectOptions(
-      screen.getByLabelText(/filter products by status/i),
-      "active",
-    );
+    await userEvent.click(screen.getByRole("radio", { name: "Active" }));
 
     expect(replace).toHaveBeenCalled();
     const [url] = replace.mock.calls.at(-1) as [string];
@@ -210,6 +241,69 @@ describe("products page", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Not allowed");
     expect(screen.queryByRole("navigation", { name: "Pagination" })).not.toBeInTheDocument();
     expect(screen.queryByText("Cloudline Pendant")).not.toBeInTheDocument();
+  });
+
+  it("publishes the selected rows and clears the selection", async () => {
+    stubList({ status_code: 200, message: "Success", data: ONE_PAGE });
+    vi.mocked(publishProduct).mockResolvedValue({ id: PRODUCT_ID } as never);
+    const user = userEvent.setup();
+
+    renderWithProviders(<ProductsPage />, { session: writerSession });
+    await screen.findByText("Cloudline Pendant");
+
+    await user.click(screen.getByRole("checkbox", { name: /select row/i }));
+    await user.click(screen.getByRole("button", { name: "Publish" }));
+
+    await waitFor(() => expect(publishProduct).toHaveBeenCalledWith(PRODUCT_ID));
+    await waitFor(() =>
+      expect(screen.queryByText(/1 product selected/i)).not.toBeInTheDocument(),
+    );
+  });
+
+  it("names the rows a bulk run fails on and retries only them", async () => {
+    stubList({ status_code: 200, message: "Success", data: TWO_PAGE });
+    vi.mocked(publishProduct).mockImplementation((id: string) =>
+      id === PRODUCT_ID
+        ? Promise.resolve({ id } as never)
+        : Promise.reject(new Error("No active variant")),
+    );
+    const user = userEvent.setup();
+
+    renderWithProviders(<ProductsPage />, { session: writerSession });
+    await screen.findByText("Cloudline Pendant");
+
+    await user.click(screen.getByRole("checkbox", { name: "Select all rows" }));
+    await user.click(screen.getByRole("button", { name: "Publish" }));
+
+    await screen.findByText(/published 1 of 2/i);
+    expect(screen.getByRole("alert")).toHaveTextContent(/second lamp/i);
+
+    await user.click(screen.getByRole("button", { name: /retry failed/i }));
+    await waitFor(() => expect(vi.mocked(publishProduct)).toHaveBeenCalledTimes(3));
+    expect(vi.mocked(publishProduct).mock.calls.at(-1)?.[0]).toBe(SECOND_ID);
+  });
+
+  it("writes a page-size change back into the URL and resets to page one", async () => {
+    stubList({ status_code: 200, message: "Success", data: ONE_PAGE });
+    const replace = vi.fn();
+    vi.mocked(useRouter).mockReturnValue({
+      replace,
+      push: vi.fn(),
+      prefetch: vi.fn().mockResolvedValue(undefined),
+      back: vi.fn(),
+      refresh: vi.fn(),
+      forward: vi.fn(),
+    } as never);
+
+    renderWithProviders(<ProductsPage />, { session: sessionFixture });
+    await screen.findByText("Cloudline Pendant");
+
+    await userEvent.selectOptions(screen.getByLabelText(/rows per page/i), "50");
+
+    expect(replace).toHaveBeenCalled();
+    const [url] = replace.mock.calls.at(-1) as [string];
+    expect(url).toContain("pageSize=50");
+    expect(url).toContain("page=1");
   });
 });
 
